@@ -1,0 +1,54 @@
+Moraia es una marca de productos femeninos, que incluye: lencería, pijamas, productos de belleza, juguetes sexuales, entre otros,
+diversos productos de interés en el púlico femenino, la gracia del proyecto es que puedas armar un carrito de productos variados 
+y puedas hacer un box de regalo con la marca para una mujer, la idea es que la marca moraia se relacione con todos los productos de ese 
+publico objetivo, eso por el lado de la marca
+
+por el lado de la web, necesito una especie e-commerce muy lindo, estético, no genérico, tampoco sobrecargado, moderno y sobre todo 
+muy responsivo en dispositivos móviles y de escritorio, algunas referencias visuales del cliente son:
+
+https://treinta.shop/yjaccesories-bf6a11
+https://www.bienchicve.com/
+https://blushmaquillaje.com/
+https://everyskins.kyte.site/
+
+sin embargo la idea es hacer un proyecto muy superior esteticamente, una idea de un ecommerce que me gusta es este:
+
+https://areaelectric.com.ve/
+
+a pesar de que no tiene que ver con el rubro
+
+este ecommerce debe ser una tienda de productos ciertamente, que cuando haga la orden caiga al panel administrativo y el usuario puedo notificar
+la orden por whatsapp y que al completar la orden luego de la pagina de success, se redirija al whatsapp
+
+por ahora el ecommerce no contara con pasarela de pago, solo notificaciones de ordenes mediante whatsapp
+
+Debe contar con un panel administrativo para manejar productos, categorias, ordenes, etc 
+en este panel tambien caeran los mensaje de contacto, por medio de formulario de contacto, ademas cuando caigan al back administrativo
+tambien debe salir la opcion de notificar el mensaje via whatsapp
+
+Necestio que el diseño sea minimalista, elegante, moderno y sobre todo muy limpio y comodo
+
+en la carpeta branding te dejare las guias de estetica, colores, tipografias, etc que usaremos, ademas te dare la paleta de colores que se usara en toda la aplicacion
+
+el proyecto debe contar con una landing page que sea muy atractiva, donde se muestre la marca y sus productos
+ademas debe contar con una pagina de contacto, una pagina de sobre nosotros, una pagina de politicas de privacidad, una pagina de terminos y condiciones, etc
+
+debe contar con un boton flotante de whatsapp con el icono de whatsapp
+
+este es el whatsapp: +584120206548
+email: By.moraia@gmail.com
+instagram: by.moraia
+
+usa las skills de diseño avanzadas para que no se vea generico,
+
+usa javascript, jquery, css, y html de toda la vida, nada que se tenga que compilar
+
+mi entorno de produccion sera un hostinger clasico
+
+
+debe tener buena optimizacion, carga rapida, buen seo y ser amigable con los motores de busqueda
+
+usa las mejores practicas de desarrollo web, limpia y ordenada 
+
+
+

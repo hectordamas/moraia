@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+
+Sitemap: https://moraia.com/sitemap.xml
