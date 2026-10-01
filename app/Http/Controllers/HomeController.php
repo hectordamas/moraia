@@ -12,7 +12,6 @@ class HomeController extends Controller
     public function index(): View
     {
         $categories = Category::where('is_active', true)
-            ->where('is_featured', true)
             ->orderBy('sort_order', 'asc')
             ->take(6)
             ->get();

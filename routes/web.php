@@ -65,7 +65,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Products CRUD
         Route::resource('products', AdminProductController::class);
 
-        // Categories CRUD
+        // Categories CRUD & Drag and Drop Reordering
+        Route::post('/categories/reorder', [AdminCategoryController::class, 'reorder'])->name('categories.reorder');
         Route::resource('categories', AdminCategoryController::class);
 
         // Orders Management

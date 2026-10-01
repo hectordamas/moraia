@@ -217,3 +217,125 @@ test('admin can authenticate and access dashboard', function () {
     $dashboardResponse->assertSee('Dashboard');
     $dashboardResponse->assertSee('Ventas Registradas');
 });
+
+test('admin dashboard handles period filters and custom date ranges', function () {
+    $admin = User::where('role', 'admin')->first();
+
+    $this->actingAs($admin);
+
+    // Test preset periods
+    $periods = ['today', 'yesterday', 'this_week', 'last_7_days', 'this_month', 'last_30_days', 'this_year', 'all'];
+    foreach ($periods as $period) {
+        $response = $this->get('/admin?period='.$period);
+        $response->assertStatus(200);
+        $response->assertSee('Tendencia de Ventas', false);
+        $response->assertSee('Estado de Órdenes', false);
+        $response->assertSee('Métodos de Entrega', false);
+        $response->assertSee('Propósito de Compra', false);
+    }
+
+    // Test custom date range
+    $customResponse = $this->get('/admin?period=custom&date_from=2026-01-01&date_to=2026-12-31');
+    $customResponse->assertStatus(200);
+    $customResponse->assertSee('Personalizado (01/01/2026 - 31/12/2026)');
+});
+
+test('admin can reorder categories via drag and drop endpoint', function () {
+    $admin = User::where('role', 'admin')->first();
+    $this->actingAs($admin);
+
+    $categories = Category::all();
+    expect($categories->count())->toBeGreaterThan(1);
+
+    // Reverse existing order
+    $reversedIds = $categories->pluck('id')->reverse()->values()->toArray();
+
+    $response = $this->postJson('/admin/categories/reorder', [
+        'order' => $reversedIds,
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson(['success' => true]);
+
+    $firstCatId = $reversedIds[0];
+    $updatedFirstCat = Category::find($firstCatId);
+    expect($updatedFirstCat->sort_order)->toBe(1);
+});
+
+test('admin can manage product variants such as sizes and colors', function () {
+    $admin = User::where('role', 'admin')->first();
+    $this->actingAs($admin);
+
+    $category = Category::first();
+    expect($category)->not->toBeNull();
+
+    // Create product with variants
+    $response = $this->post('/admin/products', [
+        'category_id' => $category->id,
+        'name' => 'Bralette Prueba Variantes',
+        'price' => 25.00,
+        'stock_quantity' => 15,
+        'target_audience' => 'moraia_intimo',
+        'variants' => [
+            [
+                'variant_type' => 'talla',
+                'name' => 'Talla 34B',
+                'value' => '34B',
+                'price_modifier' => 0.00,
+                'stock_quantity' => 10,
+                'is_active' => 1,
+            ],
+            [
+                'variant_type' => 'color',
+                'name' => 'Rosa Mauve',
+                'value' => '#D87F86',
+                'price_modifier' => 2.00,
+                'stock_quantity' => 5,
+                'is_active' => 1,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect('/admin/products');
+
+    $product = Product::where('name', 'Bralette Prueba Variantes')->first();
+    expect($product)->not->toBeNull();
+    expect($product->variants()->count())->toBe(2);
+
+    // Update variants
+    $sizeVar = $product->variants()->where('variant_type', 'talla')->first();
+    $updateResponse = $this->put('/admin/products/'.$product->id, [
+        'category_id' => $category->id,
+        'name' => 'Bralette Prueba Variantes',
+        'price' => 28.00,
+        'stock_quantity' => 20,
+        'target_audience' => 'moraia_intimo',
+        'variants' => [
+            [
+                'id' => $sizeVar->id,
+                'variant_type' => 'talla',
+                'name' => 'Talla 36B',
+                'value' => '36B',
+                'price_modifier' => 0.00,
+                'stock_quantity' => 12,
+                'is_active' => 1,
+            ],
+            [
+                'variant_type' => 'color',
+                'name' => 'Negro Noche',
+                'value' => '#242020',
+                'price_modifier' => 0.00,
+                'stock_quantity' => 8,
+                'is_active' => 1,
+            ],
+        ],
+    ]);
+
+    $updateResponse->assertRedirect('/admin/products');
+
+    $updatedProduct = $product->fresh(['variants']);
+    expect($updatedProduct->variants()->count())->toBe(2);
+    expect($updatedProduct->variants()->where('name', 'Talla 36B')->exists())->toBeTrue();
+    expect($updatedProduct->variants()->where('name', 'Negro Noche')->exists())->toBeTrue();
+    expect($updatedProduct->variants()->where('name', 'Rosa Mauve')->exists())->toBeFalse();
+});

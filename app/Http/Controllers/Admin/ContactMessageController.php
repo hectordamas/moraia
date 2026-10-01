@@ -18,19 +18,54 @@ class ContactMessageController extends Controller
             $query->where('status', $status);
         }
 
-        $messages = $query->paginate(15)->withQueryString();
+        if ($search = $request->input('q')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('subject', 'like', "%{$search}%")
+                    ->orWhere('message', 'like', "%{$search}%");
+            });
+        }
 
-        return view('admin.messages.index', compact('messages', 'status'));
+        $messages = $query->get();
+
+        $selectedId = $request->input('selected');
+        $selectedMessage = null;
+
+        if ($selectedId) {
+            $selectedMessage = $messages->firstWhere('id', (int) $selectedId)
+                ?? ContactMessage::find((int) $selectedId);
+        } else {
+            $selectedMessage = $messages->first();
+        }
+
+        // Auto mark as Leído if selected message is Pendiente
+        if ($selectedMessage && $selectedMessage->status === 'Pendiente') {
+            $selectedMessage->update(['status' => 'Leído']);
+        }
+
+        $unreadCount = ContactMessage::where('status', 'Pendiente')->count();
+        $readCount = ContactMessage::where('status', 'Leído')->count();
+        $repliedCount = ContactMessage::where('status', 'Respondido')->count();
+
+        $whatsAppUrl = $selectedMessage ? $selectedMessage->generateWhatsAppReplyUrl() : '';
+
+        return view('admin.messages.index', compact(
+            'messages',
+            'selectedMessage',
+            'status',
+            'search',
+            'unreadCount',
+            'readCount',
+            'repliedCount',
+            'whatsAppUrl'
+        ));
     }
 
-    public function show(ContactMessage $message): View
+    public function show(ContactMessage $message): RedirectResponse
     {
-        if ($message->status === 'Pendiente') {
-            $message->update(['status' => 'Leído']);
-        }
-        $whatsAppUrl = $message->generateWhatsAppReplyUrl();
-
-        return view('admin.messages.show', compact('message', 'whatsAppUrl'));
+        return redirect()->route('admin.messages.index', ['selected' => $message->id]);
     }
 
     public function updateStatus(Request $request, ContactMessage $message): RedirectResponse
@@ -41,7 +76,10 @@ class ContactMessageController extends Controller
 
         $message->update(['status' => $validated['status']]);
 
-        return redirect()->back()->with('success', 'Estado del mensaje actualizado.');
+        return redirect()->route('admin.messages.index', [
+            'selected' => $message->id,
+            'status' => $request->input('filter_status'),
+        ])->with('success', 'Estado del mensaje actualizado.');
     }
 
     public function destroy(ContactMessage $message): RedirectResponse

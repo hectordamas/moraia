@@ -280,7 +280,7 @@
 <section class="section-padding">
     <div class="container">
         <div class="intimo-banner-card">
-            <div style="max-width: 640px; position: relative; z-index: 2;">
+            <div class="intimo-banner-content" style="position: relative; z-index: 2;">
                 <span class="badge badge-rose" style="margin-bottom: var(--space-4); letter-spacing: 0.08em; text-transform: uppercase;">
                     Línea Exclusiva (18+)
                 </span>
@@ -314,11 +314,11 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-4">
+                <div class="intimo-banner-actions">
                     <a href="{{ route('shop', ['line' => 'intimo']) }}" class="btn btn-primary btn-lg">
                         Explorar Moraia Íntimo
                     </a>
-                    <a href="https://wa.me/584120206548?text=Hola%20Moraia%2C%20quisiera%20solicitar%20el%20cat%C3%A1logo%20privado%20de%20Moraia%20%C3%8Dntimo." target="_blank" rel="noopener" class="btn btn-outline" style="border-color: rgba(255,255,255,0.5); color: #FFFFFF; background-color: rgba(0, 0, 0, 0.25); backdrop-filter: blur(4px);">
+                    <a href="https://wa.me/584120206548?text=Hola%20Moraia%2C%20quisiera%20solicitar%20el%20cat%C3%A1logo%20privado%20de%20Moraia%20%C3%8Dntimo." target="_blank" rel="noopener" class="btn btn-outline btn-lg" style="border-color: rgba(255,255,255,0.5); color: #FFFFFF; background-color: rgba(0, 0, 0, 0.25); backdrop-filter: blur(4px);">
                         Catálogo Privado por WhatsApp
                     </a>
                 </div>

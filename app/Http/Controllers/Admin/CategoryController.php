@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -16,6 +17,23 @@ class CategoryController extends Controller
         $categories = Category::withCount('products')->orderBy('sort_order', 'asc')->get();
 
         return view('admin.categories.index', compact('categories'));
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer|exists:categories,id',
+        ]);
+
+        foreach ($request->input('order') as $position => $categoryId) {
+            Category::where('id', $categoryId)->update(['sort_order' => $position + 1]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Orden de categorías actualizado correctamente.',
+        ]);
     }
 
     public function create(): View
@@ -36,19 +54,26 @@ class CategoryController extends Controller
             'image' => 'nullable|image|max:4096',
         ]);
 
+        $uploadDir = public_path('uploads/categories');
+        if (! file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
         $imagePath = 'images/categories/cat_pijamas.jpg';
         if ($request->hasFile('image')) {
             $filename = 'cat_'.uniqid().'.'.$request->file('image')->getClientOriginalExtension();
-            $request->file('image')->move(public_path('images/categories'), $filename);
-            $imagePath = 'images/categories/'.$filename;
+            $request->file('image')->move($uploadDir, $filename);
+            $imagePath = 'uploads/categories/'.$filename;
         }
+
+        $maxSort = Category::max('sort_order') ?? 0;
 
         Category::create([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
             'description' => $validated['description'] ?? null,
             'image_path' => $imagePath,
-            'sort_order' => $validated['sort_order'] ?? 0,
+            'sort_order' => $validated['sort_order'] ?? ($maxSort + 1),
             'is_active' => ! empty($validated['is_active']),
             'is_featured' => ! empty($validated['is_featured']),
             'seo_title' => $validated['seo_title'] ?? $validated['name'].' | Moraia',
@@ -79,7 +104,7 @@ class CategoryController extends Controller
         $data = [
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
-            'sort_order' => $validated['sort_order'] ?? 0,
+            'sort_order' => $validated['sort_order'] ?? $category->sort_order,
             'is_active' => ! empty($validated['is_active']),
             'is_featured' => ! empty($validated['is_featured']),
             'seo_title' => $validated['seo_title'] ?? $validated['name'].' | Moraia',
@@ -87,9 +112,13 @@ class CategoryController extends Controller
         ];
 
         if ($request->hasFile('image')) {
+            $uploadDir = public_path('uploads/categories');
+            if (! file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
             $filename = 'cat_'.uniqid().'.'.$request->file('image')->getClientOriginalExtension();
-            $request->file('image')->move(public_path('images/categories'), $filename);
-            $data['image_path'] = 'images/categories/'.$filename;
+            $request->file('image')->move($uploadDir, $filename);
+            $data['image_path'] = 'uploads/categories/'.$filename;
         }
 
         $category->update($data);

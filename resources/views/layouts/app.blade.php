@@ -25,12 +25,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- CSS System -->
-    <link rel="stylesheet" href="{{ asset('css/variables.css') }}?v=1.0">
-    <link rel="stylesheet" href="{{ asset('css/base.css') }}?v=1.0">
-    <link rel="stylesheet" href="{{ asset('css/components.css') }}?v=1.0">
-    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v=1.0">
-    <link rel="stylesheet" href="{{ asset('css/slider.css') }}?v=1.0">
-    <link rel="stylesheet" href="{{ asset('css/shop.css') }}?v=1.0">
+    <link rel="stylesheet" href="{{ asset('css/variables.css') }}?v={{ file_exists(public_path('css/variables.css')) ? filemtime(public_path('css/variables.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/base.css') }}?v={{ file_exists(public_path('css/base.css')) ? filemtime(public_path('css/base.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/components.css') }}?v={{ file_exists(public_path('css/components.css')) ? filemtime(public_path('css/components.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/layout.css') }}?v={{ file_exists(public_path('css/layout.css')) ? filemtime(public_path('css/layout.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/slider.css') }}?v={{ file_exists(public_path('css/slider.css')) ? filemtime(public_path('css/slider.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/shop.css') }}?v={{ file_exists(public_path('css/shop.css')) ? filemtime(public_path('css/shop.css')) : '2.0' }}">
     @stack('styles')
 
     <!-- JSON-LD Structured Data -->

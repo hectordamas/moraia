@@ -8,7 +8,7 @@
         <div>
             <h2 class="admin-card-title">Categorías de la Tienda</h2>
             <p style="color: var(--color-text-muted); font-size: var(--text-xs); margin-top: 2px;">
-                Organiza las líneas de productos y secciones principales de Moraia.
+                Organiza las líneas de productos. Puedes <strong>arrastrar y soltar las filas</strong> para cambiar el orden en el menú y en la página principal.
             </p>
         </div>
         <a href="{{ route('admin.categories.create') }}" class="btn btn-primary btn-sm">
@@ -23,18 +23,29 @@
         <table class="admin-table">
             <thead>
                 <tr>
+                    <th style="width: 40px; text-align: center;">Mover</th>
+                    <th style="width: 60px;">Orden</th>
                     <th>Imagen</th>
                     <th>Nombre</th>
                     <th>Slug</th>
                     <th>Productos</th>
-                    <th>Orden</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                @forelse($categories as $cat)
-                    <tr>
+            <tbody id="sortableCategoriesBody">
+                @forelse($categories as $index => $cat)
+                    <tr data-id="{{ $cat->id }}" class="category-row">
+                        <td style="text-align: center; vertical-align: middle;">
+                            <span class="drag-handle" title="Arrastra para cambiar el orden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                                </svg>
+                            </span>
+                        </td>
+                        <td class="category-order-num" style="font-weight: 700; color: var(--color-primary-dark);">
+                            #{{ $index + 1 }}
+                        </td>
                         <td>
                             @if($cat->image_path)
                                 <img src="{{ asset($cat->image_path) }}" alt="{{ $cat->name }}" class="admin-table-img">
@@ -43,14 +54,13 @@
                             @endif
                         </td>
                         <td>
-                            <strong style="color: var(--color-text);">{{ $cat->name }}</strong>
+                            <strong style="color: var(--color-text); font-size: var(--text-sm);">{{ $cat->name }}</strong>
                             <div style="font-size: var(--text-xs); color: var(--color-text-muted);">{{ Str::limit($cat->description, 60) }}</div>
                         </td>
                         <td><code>{{ $cat->slug }}</code></td>
                         <td>
                             <span class="badge badge-subtle">{{ $cat->products_count }} productos</span>
                         </td>
-                        <td>{{ $cat->sort_order }}</td>
                         <td>
                             @if($cat->is_active)
                                 <span class="badge badge-confirmed">Activa</span>
@@ -84,11 +94,88 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px;">No hay categorías registradas.</td>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: var(--color-text-muted);">
+                            No hay categorías registradas.
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- Floating Toast Notification -->
+<div id="categoryToast" class="admin-floating-toast toast-success">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+    </svg>
+    <span id="toastMessage">Orden de categorías guardado correctamente.</span>
+</div>
 @endsection
+
+@push('scripts')
+<!-- SortableJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tableBody = document.getElementById('sortableCategoriesBody');
+    const toast = document.getElementById('categoryToast');
+    const toastMessage = document.getElementById('toastMessage');
+    let toastTimeout = null;
+
+    function showToast(message, isError = false) {
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastMessage.textContent = message;
+        toast.className = `admin-floating-toast show ${isError ? 'toast-error' : 'toast-success'}`;
+        toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    function updateVisualOrderNumbers() {
+        const rows = tableBody.querySelectorAll('tr.category-row');
+        rows.forEach((row, index) => {
+            const numCell = row.querySelector('.category-order-num');
+            if (numCell) numCell.textContent = `#${index + 1}`;
+        });
+    }
+
+    if (tableBody) {
+        new Sortable(tableBody, {
+            handle: '.drag-handle',
+            animation: 180,
+            ghostClass: 'sortable-row-ghost',
+            chosenClass: 'sortable-row-chosen',
+            onEnd: function() {
+                updateVisualOrderNumbers();
+
+                const rows = Array.from(tableBody.querySelectorAll('tr.category-row'));
+                const order = rows.map(r => parseInt(r.getAttribute('data-id'))).filter(Boolean);
+
+                // Send updated order to backend
+                fetch("{{ route('admin.categories.reorder') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ order: order })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Error al guardar el nuevo orden');
+                    return response.json();
+                })
+                .then(data => {
+                    showToast(data.message || 'Orden de categorías actualizado correctamente.');
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Ocurrió un error al guardar el orden.', true);
+                });
+            }
+        });
+    }
+});
+</script>
+@endpush

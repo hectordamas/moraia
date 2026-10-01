@@ -23,8 +23,9 @@
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="admin-sidebar-brand">
-                <img src="{{ asset('images/branding/logo_moraia_navbar_oscuro.png') }}" alt="MORAIA">
-                <span>Admin</span>
+                <a href="{{ route('admin.dashboard') }}" style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                    <img src="{{ asset('images/branding/logo_moraia_navbar_oscuro.png') }}" alt="MORAIA">
+                </a>
             </div>
 
             <nav class="admin-nav">
@@ -70,25 +71,24 @@
                     </svg>
                     <span>Configuración</span>
                 </a>
-
-                <div style="margin-top: auto; padding-top: var(--space-6);">
-                    <a href="{{ route('home') }}" target="_blank" class="admin-nav-link" style="color: var(--color-primary-light);">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                        </svg>
-                        <span>Ver Tienda Online</span>
-                    </a>
-                </div>
             </nav>
 
+            <!-- Pinned Bottom Actions -->
             <div class="admin-sidebar-footer">
-                <form action="{{ route('admin.logout') }}" method="POST">
+                <a href="{{ route('home') }}" target="_blank" class="admin-nav-link admin-nav-link-store">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                    <span>Ver Tienda Online</span>
+                </a>
+
+                <form action="{{ route('admin.logout') }}" method="POST" style="margin: 0;">
                     @csrf
-                    <button type="submit" style="color: #E0858C; font-size: var(--text-xs); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <button type="submit" class="admin-logout-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                         </svg>
-                        Cerrar Sesión
+                        <span>Cerrar Sesión</span>
                     </button>
                 </form>
             </div>
