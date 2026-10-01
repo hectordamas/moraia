@@ -28,7 +28,7 @@ class ContactMessage extends Model
             $cleanPhone = '58'.$cleanPhone;
         }
 
-        $msg = "Hola {$this->name}, gracias por escribirnos a *MORAIA* 💕\n";
+        $msg = "Hola {$this->name}, gracias por escribirnos a *MORAIA*.\n";
         $msg .= "Con respecto a tu consulta: \"{$this->subject}\"\n\n";
         $msg .= '¿En qué podemos ayudarte hoy?';
 
