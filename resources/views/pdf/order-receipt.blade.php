@@ -3,214 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Comprobante de Orden #{{ $order->order_code }} - MORAIA</title>
+    <title>Comprobante de Orden #{{ $order->order_code }} — MORAIA</title>
     <style>
         @page {
-            margin: 25px 30px;
+            margin: 28px 32px;
+        }
+        * {
+            box-sizing: border-box;
         }
         body {
             font-family: 'DejaVu Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #2D2D2D;
-            font-size: 11px;
-            line-height: 1.4;
+            color: #2A2626;
+            font-size: 10px;
+            line-height: 1.45;
             margin: 0;
             padding: 0;
             background-color: #FFFFFF;
         }
+
+        /* Top Header */
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #8A4A58;
-            padding-bottom: 12px;
+            margin-bottom: 16px;
         }
-        .brand-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #7B3F50;
-            letter-spacing: 3px;
-            margin: 0;
+        .logo-img {
+            height: 44px;
+            max-width: 170px;
+        }
+        .brand-subtext {
+            font-size: 8.5px;
+            color: #8A7B7A;
+            letter-spacing: 1.2px;
             text-transform: uppercase;
-        }
-        .brand-subtitle {
-            font-size: 9px;
-            color: #7A7A7A;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-top: 3px;
-        }
-        .receipt-badge-title {
-            font-size: 13px;
-            font-weight: bold;
-            color: #7B3F50;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 0;
-        }
-        .order-code {
-            font-size: 13px;
-            font-weight: bold;
-            color: #222222;
-            margin-top: 2px;
-        }
-        .order-date {
-            font-size: 10px;
-            color: #666666;
-            margin-top: 2px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            font-size: 9px;
-            font-weight: bold;
-            border-radius: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
             margin-top: 4px;
         }
-        .badge-pending { background-color: #D9822B; color: #FFFFFF; }
-        .badge-confirmed { background-color: #4E8B71; color: #FFFFFF; }
-        .badge-delivered { background-color: #2E8B57; color: #FFFFFF; }
-        .badge-cancelled { background-color: #C05C5C; color: #FFFFFF; }
+        .header-meta {
+            text-align: right;
+            vertical-align: top;
+        }
+        .receipt-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #A95058;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin: 0 0 4px 0;
+        }
+        .order-code-highlight {
+            font-size: 13px;
+            font-weight: bold;
+            color: #2A2626;
+            letter-spacing: 0.5px;
+        }
+        .order-datetime {
+            font-size: 9px;
+            color: #7A6E6D;
+            margin-top: 3px;
+        }
 
-        /* Two Columns Section */
-        .info-table {
+        /* Status Badge */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            font-size: 8.5px;
+            font-weight: bold;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 5px;
+        }
+        .badge-pending {
+            background-color: #FEF7EE;
+            color: #D9822B;
+            border: 1px solid #F3DCBC;
+        }
+        .badge-confirmed {
+            background-color: #EBF5F0;
+            color: #4E8B71;
+            border: 1px solid #B8E0CD;
+        }
+        .badge-delivered {
+            background-color: #EAF7EE;
+            color: #2E8B57;
+            border: 1px solid #B2E5C5;
+        }
+        .badge-cancelled {
+            background-color: #FDF2F2;
+            color: #C05C5C;
+            border: 1px solid #F3BDBB;
+        }
+
+        /* Divider Bar */
+        .brand-divider {
+            width: 100%;
+            height: 2px;
+            background-color: #D87F86;
+            margin-bottom: 16px;
+        }
+
+        /* Two Columns Cards */
+        .cards-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 10px 0;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
+            margin-left: -10px;
+            margin-right: -10px;
         }
-        .info-card {
-            background-color: #FAF6F4;
-            border: 1px solid #EAE0D8;
-            border-radius: 4px;
-            padding: 10px 12px;
+        .card-box {
+            background-color: #FAF5F2;
+            border: 1px solid #EAE2DE;
+            border-radius: 6px;
+            padding: 10px 14px;
             vertical-align: top;
             width: 50%;
         }
-        .card-heading {
-            font-size: 10px;
+        .card-header-title {
+            font-size: 9.5px;
             font-weight: bold;
-            color: #7B3F50;
+            color: #A95058;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-            border-bottom: 1px solid #E2D5CC;
-            padding-bottom: 4px;
-            margin-bottom: 6px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #E4D8D2;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
         }
-        .info-row {
+        .card-line {
             margin-bottom: 4px;
-            font-size: 10px;
+            font-size: 9.5px;
+            color: #2A2626;
         }
-        .info-label {
+        .card-label {
             font-weight: bold;
-            color: #555555;
+            color: #6B5E5D;
+            display: inline-block;
+            min-width: 65px;
+        }
+
+        /* Gift Special Box */
+        .gift-tag {
+            display: inline-block;
+            background-color: #F7E4E6;
+            color: #A95058;
+            font-size: 8.5px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
         }
 
         /* Products Table */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #EAE2DE;
         }
         .items-table th {
-            background-color: #7B3F50;
+            background-color: #A95058;
             color: #FFFFFF;
-            font-size: 9.5px;
+            font-size: 9px;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 7px 8px;
+            letter-spacing: 0.8px;
+            padding: 8px 10px;
             text-align: left;
+            border: none;
         }
-        .items-table th.text-center { text-align: center; }
-        .items-table th.text-right { text-align: right; }
+        .items-table th.th-center { text-align: center; }
+        .items-table th.th-right { text-align: right; }
         .items-table td {
-            padding: 7px 8px;
-            border-bottom: 1px solid #EAE0D8;
-            font-size: 10px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #F0E8E4;
+            font-size: 9.5px;
             vertical-align: middle;
+            color: #2A2626;
         }
         .items-table tr:nth-child(even) td {
-            background-color: #FCFAF8;
+            background-color: #FCF9F7;
         }
-        .item-name {
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+        .product-title {
             font-weight: bold;
-            color: #222222;
-        }
-        .item-variant {
-            font-size: 9px;
-            color: #7B3F50;
-            margin-top: 2px;
-        }
-
-        /* Totals Block */
-        .summary-wrapper {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        .summary-table {
-            width: 250px;
-            border-collapse: collapse;
-            margin-left: auto;
-            border: 1px solid #EAE0D8;
-            background-color: #FAF6F4;
-            border-radius: 4px;
-        }
-        .summary-table td {
-            padding: 5px 10px;
+            color: #2A2626;
             font-size: 10px;
         }
-        .summary-total-row td {
-            background-color: #7B3F50;
-            color: #FFFFFF;
-            font-size: 11px;
-            font-weight: bold;
-            padding: 7px 10px;
+        .product-variant-text {
+            font-size: 8.5px;
+            color: #A95058;
+            margin-top: 2px;
+            font-style: italic;
         }
 
-        /* Notes Box */
-        .notes-box {
-            background-color: #FDFBF7;
-            border: 1px dashed #D6C2B4;
-            border-radius: 4px;
+        /* Bottom Section: Notes & Totals */
+        .bottom-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+        .bottom-table td {
+            vertical-align: top;
+        }
+        .left-notes-col {
+            width: 55%;
+            padding-right: 15px;
+        }
+        .right-totals-col {
+            width: 45%;
+        }
+
+        .note-card {
+            background-color: #FCF7F4;
+            border: 1px dashed #D87F86;
+            border-radius: 6px;
             padding: 8px 12px;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
+            font-size: 9px;
+            color: #4A4242;
+        }
+        .note-card-title {
+            font-weight: bold;
+            color: #A95058;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            font-size: 8.5px;
+            letter-spacing: 0.5px;
+        }
+
+        .payment-info-box {
+            background-color: #FAF5F2;
+            border: 1px solid #EAE2DE;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 8.5px;
+            color: #6B5E5D;
+            line-height: 1.4;
+        }
+        .payment-info-title {
+            font-weight: bold;
+            color: #2A2626;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Totals Card */
+        .totals-card {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #EAE2DE;
+            border-radius: 6px;
+            background-color: #FAF5F2;
+            overflow: hidden;
+        }
+        .totals-card td {
+            padding: 6px 12px;
             font-size: 9.5px;
+        }
+        .totals-card .label-col {
+            color: #6B5E5D;
+        }
+        .totals-card .val-col {
+            text-align: right;
+            font-weight: bold;
+            color: #2A2626;
+        }
+        .total-highlight-row td {
+            background-color: #A95058;
+            color: #FFFFFF !important;
+            font-size: 11px !important;
+            font-weight: bold;
+            padding: 9px 12px;
+        }
+        .total-highlight-row .val-col {
+            color: #FFFFFF !important;
+            font-size: 12px !important;
         }
 
         /* Footer */
-        .footer {
-            border-top: 1px solid #EAE0D8;
-            padding-top: 10px;
+        .footer-wrap {
+            border-top: 1px solid #EAE2DE;
+            padding-top: 12px;
             text-align: center;
-            font-size: 9px;
-            color: #777777;
+            font-size: 8.5px;
+            color: #8A7B7A;
             margin-top: 20px;
+            line-height: 1.5;
         }
-        .footer-brand {
+        .footer-brand-name {
             font-weight: bold;
-            color: #7B3F50;
+            color: #A95058;
+            letter-spacing: 1px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
+    @php
+        $logoPath = public_path('images/branding/logo_moraia_navbar_oscuro.png');
+        $logoSrc = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : '';
+    @endphp
+
+    <!-- Brand Header -->
     <table class="header-table">
         <tr>
             <td style="vertical-align: middle;">
-                <div class="brand-title">MORAIA</div>
-                <div class="brand-subtitle">Lencería Fina &amp; Detalles Exclusivos</div>
-                <div style="font-size: 9px; color: #888888; margin-top: 3px;">
+                @if($logoSrc)
+                    <img src="{{ $logoSrc }}" alt="MORAIA" class="logo-img">
+                @else
+                    <div style="font-size: 22px; font-weight: bold; color: #A95058; letter-spacing: 2px;">MORAIA</div>
+                @endif
+                <div class="brand-subtext">Lencería Fina &bull; Detalles Exclusivos</div>
+                <div style="font-size: 8.5px; color: #7A6E6D; margin-top: 2px;">
                     Caracas, Venezuela &bull; WhatsApp: +58 412 020 6548
                 </div>
             </td>
-            <td style="text-align: right; vertical-align: middle;">
-                <div class="receipt-badge-title">Comprobante de Pedido</div>
-                <div class="order-code">#{{ $order->order_code }}</div>
-                <div class="order-date">
+            <td class="header-meta">
+                <div class="receipt-title">Comprobante de Pedido</div>
+                <div class="order-code-highlight">#{{ $order->order_code }}</div>
+                <div class="order-datetime">
                     Fecha: {{ $order->created_at ? $order->created_at->format('d/m/Y h:i A') : date('d/m/Y h:i A') }}
                 </div>
                 <div>
@@ -222,69 +338,84 @@
                             'Cancelada' => 'badge-cancelled',
                             default => 'badge-pending',
                         };
+                        $statusLabel = match ($order->status) {
+                            'Nueva', 'Preparando' => 'PENDIENTE',
+                            'Lista' => 'CONFIRMADA',
+                            default => strtoupper($order->status),
+                        };
                     @endphp
                     <span class="badge {{ $badgeClass }}">
-                        Estado: {{ $order->status }}
+                        Estado: {{ $statusLabel }}
                     </span>
                 </div>
             </td>
         </tr>
     </table>
 
+    <!-- Decorative Top Line -->
+    <div class="brand-divider"></div>
+
     <!-- Customer & Delivery Two Columns -->
-    <table class="info-table">
+    <table class="cards-table">
         <tr>
             <!-- Customer Card -->
-            <td class="info-card">
-                <div class="card-heading">Datos del Cliente</div>
-                <div class="info-row">
-                    <span class="info-label">Nombre:</span> {{ $order->full_name }}
+            <td class="card-box">
+                <div class="card-header-title">Datos del Cliente</div>
+                <div class="card-line">
+                    <span class="card-label">Nombre:</span>
+                    <strong>{{ $order->full_name }}</strong>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">WhatsApp:</span> {{ $order->customer_whatsapp }}
+                <div class="card-line">
+                    <span class="card-label">WhatsApp:</span>
+                    {{ $order->customer_whatsapp }}
                 </div>
                 @if($order->customer_phone && $order->customer_phone !== $order->customer_whatsapp)
-                    <div class="info-row">
-                        <span class="info-label">Teléfono Alt.:</span> {{ $order->customer_phone }}
+                    <div class="card-line">
+                        <span class="card-label">Teléfono:</span>
+                        {{ $order->customer_phone }}
                     </div>
                 @endif
                 @if($order->customer_email)
-                    <div class="info-row">
-                        <span class="info-label">Email:</span> {{ $order->customer_email }}
+                    <div class="card-line">
+                        <span class="card-label">Email:</span>
+                        {{ $order->customer_email }}
                     </div>
                 @endif
             </td>
 
             <!-- Delivery Card -->
-            <td class="info-card">
-                <div class="card-heading">Información de Entrega</div>
-                <div class="info-row">
-                    <span class="info-label">Modalidad:</span> {{ $order->delivery_method_label }}
+            <td class="card-box">
+                <div class="card-header-title">Información de Entrega</div>
+                <div class="card-line">
+                    <span class="card-label">Modalidad:</span>
+                    <strong>{{ $order->delivery_method_label }}</strong>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Ciudad:</span> {{ $order->delivery_city }}
+                <div class="card-line">
+                    <span class="card-label">Ciudad:</span>
+                    {{ $order->delivery_city }}
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Dirección:</span> {{ $order->delivery_address }}
+                <div class="card-line">
+                    <span class="card-label">Dirección:</span>
+                    {{ $order->delivery_address }}
                 </div>
                 @if($order->is_gift)
-                    <div class="info-row" style="color: #7B3F50; font-weight: bold; margin-top: 4px;">
-                        <span>🎁 Es un Regalo para: {{ $order->gift_recipient_name ?? 'Destinataria' }}</span>
+                    <div class="gift-tag">
+                        🎁 Regalo para: {{ $order->gift_recipient_name ?? 'Destinataria' }}
                     </div>
                 @endif
             </td>
         </tr>
     </table>
 
-    <!-- Items Table -->
+    <!-- Products Table -->
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 30px;" class="text-center">#</th>
+                <th style="width: 25px;" class="th-center">#</th>
                 <th>Descripción del Producto</th>
-                <th style="width: 75px;" class="text-right">Precio Unit.</th>
-                <th style="width: 45px;" class="text-center">Cant.</th>
-                <th style="width: 80px;" class="text-right">Total</th>
+                <th style="width: 80px;" class="th-right">Precio Unit.</th>
+                <th style="width: 45px;" class="th-center">Cant.</th>
+                <th style="width: 85px;" class="th-right">Subtotal</th>
             </tr>
         </thead>
         <tbody>
@@ -292,56 +423,60 @@
             @foreach($order->items as $index => $item)
                 @php $totalQty += $item->quantity; @endphp
                 <tr>
-                    <td class="text-center" style="color: #888888;">{{ $index + 1 }}</td>
+                    <td class="th-center" style="color: #8A7B7A;">{{ $index + 1 }}</td>
                     <td>
-                        <div class="item-name">{{ $item->product_name }}</div>
+                        <div class="product-title">{{ $item->product_name }}</div>
                         @if($item->variant_details)
-                            <div class="item-variant">{{ $item->variant_details }}</div>
+                            <div class="product-variant-text">{{ $item->variant_details }}</div>
                         @endif
                     </td>
-                    <td class="text-right">${{ number_format($item->unit_price, 2) }}</td>
-                    <td class="text-center font-bold">{{ $item->quantity }}</td>
-                    <td class="text-right font-bold">${{ number_format($item->total_price, 2) }}</td>
+                    <td class="th-right">${{ number_format($item->unit_price, 2) }}</td>
+                    <td class="th-center" style="font-weight: bold;">{{ $item->quantity }}</td>
+                    <td class="th-right" style="font-weight: bold; color: #A95058;">${{ number_format($item->total_price, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
-    <!-- Summary / Totals -->
-    <table class="summary-wrapper">
+    <!-- Bottom Section: Notes & Totals -->
+    <table class="bottom-table">
         <tr>
-            <td style="vertical-align: top; width: 55%;">
+            <!-- Left Notes Column -->
+            <td class="left-notes-col">
                 @if($order->is_gift && $order->gift_card_message)
-                    <div class="notes-box">
-                        <strong style="color: #7B3F50;">💌 Mensaje de la tarjeta de regalo:</strong><br>
-                        <em>"{{ $order->gift_card_message }}"</em>
+                    <div class="note-card">
+                        <div class="note-card-title">💌 Dedicatoria de Regalo:</div>
+                        <div style="font-style: italic;">"{{ $order->gift_card_message }}"</div>
                     </div>
                 @endif
 
                 @if($order->customer_notes)
-                    <div class="notes-box">
-                        <strong>Notas adicionales del pedido:</strong><br>
-                        {{ $order->customer_notes }}
+                    <div class="note-card">
+                        <div class="note-card-title">📝 Notas del Pedido:</div>
+                        <div>{{ $order->customer_notes }}</div>
                     </div>
                 @endif
 
-                <div style="font-size: 9px; color: #777777; line-height: 1.5; padding-right: 15px;">
-                    <strong>Coordinación de Pago:</strong> Para concretar tu compra por Pago Móvil, Zelle, Transferencia o Efectivo, envía este comprobante o el código de tu orden a nuestro WhatsApp oficial.
+                <div class="payment-info-box">
+                    <div class="payment-info-title">Atención y Métodos de Pago</div>
+                    Aceptamos <strong>Pago Móvil, Zelle, Transferencia Bancaria y Efectivo</strong>. Para coordinar y confirmar tu comprobante de pago, contáctanos a nuestro WhatsApp oficial: <strong>+58 412 020 6548</strong>.
                 </div>
             </td>
-            <td style="vertical-align: top; width: 45%;">
-                <table class="summary-table">
+
+            <!-- Right Totals Column -->
+            <td class="right-totals-col">
+                <table class="totals-card">
                     <tr>
-                        <td style="color: #666666;">Total Unidades:</td>
-                        <td style="text-align: right; font-weight: bold;">{{ $totalQty }}</td>
+                        <td class="label-col">Total Unidades:</td>
+                        <td class="val-col">{{ $totalQty }}</td>
                     </tr>
                     <tr>
-                        <td style="color: #666666;">Subtotal:</td>
-                        <td style="text-align: right; font-weight: bold;">${{ number_format($order->subtotal, 2) }} US$</td>
+                        <td class="label-col">Subtotal:</td>
+                        <td class="val-col">${{ number_format($order->subtotal, 2) }} US$</td>
                     </tr>
                     <tr>
-                        <td style="color: #666666;">Envío ({{ $order->delivery_method_label }}):</td>
-                        <td style="text-align: right; font-weight: bold;">
+                        <td class="label-col">Envío ({{ $order->delivery_method_label }}):</td>
+                        <td class="val-col">
                             @if($order->shipping_fee > 0)
                                 ${{ number_format($order->shipping_fee, 2) }} US$
                             @elseif($order->delivery_method === 'envio_nacional')
@@ -351,9 +486,9 @@
                             @endif
                         </td>
                     </tr>
-                    <tr class="summary-total-row">
+                    <tr class="total-highlight-row">
                         <td>TOTAL A PAGAR:</td>
-                        <td style="text-align: right;">${{ number_format($order->total, 2) }} US$</td>
+                        <td class="val-col">${{ number_format($order->total, 2) }} US$</td>
                     </tr>
                 </table>
             </td>
@@ -361,9 +496,9 @@
     </table>
 
     <!-- Footer -->
-    <div class="footer">
-        <span class="footer-brand">MORAIA</span> &bull; Belleza, Lencería Fina &amp; Momentos Especiales<br>
-        Atención y confirmaciones vía WhatsApp: +58 412 020 6548 &bull; Caracas, Venezuela
+    <div class="footer-wrap">
+        <span class="footer-brand-name">MORAIA</span> &bull; El arte de consentirte &bull; Belleza, Lencería Fina &amp; Momentos Especiales<br>
+        Caracas, Venezuela &bull; www.bymoraia.com &bull; WhatsApp Oficial: +58 412 020 6548
     </div>
 
 </body>
