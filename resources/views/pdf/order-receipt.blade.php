@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Comprobante de Orden #{{ $order->order_code }} — MORAIA</title>
+    <title>Comprobante #{{ $order->order_code }} — MORAIA</title>
     <style>
         @page {
-            margin: 28px 32px;
+            margin: 26px 30px;
         }
         * {
             box-sizing: border-box;
         }
         body {
             font-family: 'DejaVu Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #2A2626;
-            font-size: 10px;
-            line-height: 1.45;
+            color: #1A1A1A;
+            font-size: 9.5px;
+            line-height: 1.4;
             margin: 0;
             padding: 0;
             background-color: #FFFFFF;
@@ -25,16 +25,16 @@
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         .logo-img {
-            height: 44px;
-            max-width: 170px;
+            height: 38px;
+            max-width: 160px;
         }
         .brand-subtext {
-            font-size: 8.5px;
-            color: #8A7B7A;
-            letter-spacing: 1.2px;
+            font-size: 8px;
+            color: #7A6E6D;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
             margin-top: 4px;
         }
@@ -43,35 +43,35 @@
             vertical-align: top;
         }
         .receipt-title {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: bold;
-            color: #A95058;
-            letter-spacing: 1.5px;
+            color: #1A1A1A;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            margin: 0 0 4px 0;
+            margin: 0 0 2px 0;
         }
         .order-code-highlight {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
-            color: #2A2626;
+            color: #1A1A1A;
             letter-spacing: 0.5px;
         }
         .order-datetime {
-            font-size: 9px;
+            font-size: 8.5px;
             color: #7A6E6D;
-            margin-top: 3px;
+            margin-top: 2px;
         }
 
         /* Status Badge */
         .badge {
             display: inline-block;
-            padding: 3px 10px;
-            font-size: 8.5px;
+            padding: 2px 8px;
+            font-size: 8px;
             font-weight: bold;
-            border-radius: 12px;
+            border-radius: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-top: 5px;
+            letter-spacing: 0.6px;
+            margin-top: 4px;
         }
         .badge-pending {
             background-color: #FEF7EE;
@@ -95,50 +95,50 @@
         }
 
         /* Divider Bar */
-        .brand-divider {
+        .divider-line {
             width: 100%;
-            height: 2px;
-            background-color: #D87F86;
-            margin-bottom: 16px;
+            height: 1px;
+            background-color: #EAE2DE;
+            margin-bottom: 14px;
         }
 
         /* Two Columns Cards */
         .cards-table {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 10px 0;
-            margin-bottom: 18px;
-            margin-left: -10px;
-            margin-right: -10px;
+            border-spacing: 8px 0;
+            margin-bottom: 14px;
+            margin-left: -8px;
+            margin-right: -8px;
         }
         .card-box {
             background-color: #FAF5F2;
             border: 1px solid #EAE2DE;
-            border-radius: 6px;
-            padding: 10px 14px;
+            border-radius: 4px;
+            padding: 9px 12px;
             vertical-align: top;
             width: 50%;
         }
         .card-header-title {
-            font-size: 9.5px;
+            font-size: 8.5px;
             font-weight: bold;
-            color: #A95058;
+            color: #1A1A1A;
             text-transform: uppercase;
             letter-spacing: 1px;
             border-bottom: 1px solid #E4D8D2;
-            padding-bottom: 5px;
-            margin-bottom: 8px;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
         }
         .card-line {
-            margin-bottom: 4px;
-            font-size: 9.5px;
+            margin-bottom: 3px;
+            font-size: 9px;
             color: #2A2626;
         }
         .card-label {
             font-weight: bold;
-            color: #6B5E5D;
+            color: #7A6E6D;
             display: inline-block;
-            min-width: 65px;
+            min-width: 60px;
         }
 
         /* Gift Special Box */
@@ -146,56 +146,54 @@
             display: inline-block;
             background-color: #F7E4E6;
             color: #A95058;
-            font-size: 8.5px;
+            font-size: 8px;
             font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
+            padding: 2px 5px;
+            border-radius: 3px;
+            margin-top: 3px;
         }
 
         /* Products Table */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
-            border-radius: 6px;
-            overflow: hidden;
+            margin-bottom: 14px;
             border: 1px solid #EAE2DE;
         }
         .items-table th {
-            background-color: #A95058;
-            color: #FFFFFF;
-            font-size: 9px;
+            background-color: #F4ECE8;
+            color: #1A1A1A;
+            font-size: 8.5px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            padding: 8px 10px;
+            padding: 7px 8px;
             text-align: left;
-            border: none;
+            border-bottom: 1px solid #EAE2DE;
         }
         .items-table th.th-center { text-align: center; }
         .items-table th.th-right { text-align: right; }
         .items-table td {
-            padding: 8px 10px;
+            padding: 7px 8px;
             border-bottom: 1px solid #F0E8E4;
-            font-size: 9.5px;
+            font-size: 9px;
             vertical-align: middle;
             color: #2A2626;
         }
         .items-table tr:nth-child(even) td {
-            background-color: #FCF9F7;
+            background-color: #FCFAF8;
         }
         .items-table tr:last-child td {
             border-bottom: none;
         }
         .product-title {
             font-weight: bold;
-            color: #2A2626;
-            font-size: 10px;
+            color: #1A1A1A;
+            font-size: 9.5px;
         }
         .product-variant-text {
-            font-size: 8.5px;
-            color: #A95058;
+            font-size: 8px;
+            color: #7A6E6D;
             margin-top: 2px;
             font-style: italic;
         }
@@ -204,49 +202,49 @@
         .bottom-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         .bottom-table td {
             vertical-align: top;
         }
         .left-notes-col {
             width: 55%;
-            padding-right: 15px;
+            padding-right: 12px;
         }
         .right-totals-col {
             width: 45%;
         }
 
         .note-card {
-            background-color: #FCF7F4;
-            border: 1px dashed #D87F86;
-            border-radius: 6px;
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            font-size: 9px;
+            background-color: #FAF5F2;
+            border: 1px dashed #D4C7C2;
+            border-radius: 4px;
+            padding: 7px 10px;
+            margin-bottom: 6px;
+            font-size: 8.5px;
             color: #4A4242;
         }
         .note-card-title {
             font-weight: bold;
-            color: #A95058;
-            margin-bottom: 3px;
+            color: #1A1A1A;
+            margin-bottom: 2px;
             text-transform: uppercase;
-            font-size: 8.5px;
+            font-size: 8px;
             letter-spacing: 0.5px;
         }
 
         .payment-info-box {
             background-color: #FAF5F2;
             border: 1px solid #EAE2DE;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 8.5px;
+            border-radius: 4px;
+            padding: 7px 10px;
+            font-size: 8px;
             color: #6B5E5D;
-            line-height: 1.4;
+            line-height: 1.35;
         }
         .payment-info-title {
             font-weight: bold;
-            color: #2A2626;
+            color: #1A1A1A;
             margin-bottom: 2px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -257,13 +255,12 @@
             width: 100%;
             border-collapse: collapse;
             border: 1px solid #EAE2DE;
-            border-radius: 6px;
+            border-radius: 4px;
             background-color: #FAF5F2;
-            overflow: hidden;
         }
         .totals-card td {
-            padding: 6px 12px;
-            font-size: 9.5px;
+            padding: 5px 10px;
+            font-size: 9px;
         }
         .totals-card .label-col {
             color: #6B5E5D;
@@ -271,33 +268,34 @@
         .totals-card .val-col {
             text-align: right;
             font-weight: bold;
-            color: #2A2626;
+            color: #1A1A1A;
         }
         .total-highlight-row td {
-            background-color: #A95058;
+            background-color: #1A1A1A;
             color: #FFFFFF !important;
-            font-size: 11px !important;
+            font-size: 10.5px !important;
             font-weight: bold;
-            padding: 9px 12px;
+            padding: 8px 10px;
+            border-top: 1px solid #1A1A1A;
         }
         .total-highlight-row .val-col {
             color: #FFFFFF !important;
-            font-size: 12px !important;
+            font-size: 11px !important;
         }
 
         /* Footer */
         .footer-wrap {
             border-top: 1px solid #EAE2DE;
-            padding-top: 12px;
+            padding-top: 10px;
             text-align: center;
-            font-size: 8.5px;
+            font-size: 8px;
             color: #8A7B7A;
-            margin-top: 20px;
-            line-height: 1.5;
+            margin-top: 16px;
+            line-height: 1.4;
         }
         .footer-brand-name {
             font-weight: bold;
-            color: #A95058;
+            color: #1A1A1A;
             letter-spacing: 1px;
         }
     </style>
@@ -316,10 +314,10 @@
                 @if($logoSrc)
                     <img src="{{ $logoSrc }}" alt="MORAIA" class="logo-img">
                 @else
-                    <div style="font-size: 22px; font-weight: bold; color: #A95058; letter-spacing: 2px;">MORAIA</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #1A1A1A; letter-spacing: 2px;">MORAIA</div>
                 @endif
                 <div class="brand-subtext">Lencería Fina &bull; Detalles Exclusivos</div>
-                <div style="font-size: 8.5px; color: #7A6E6D; margin-top: 2px;">
+                <div style="font-size: 8px; color: #7A6E6D; margin-top: 2px;">
                     Caracas, Venezuela &bull; WhatsApp: +58 412 020 6548
                 </div>
             </td>
@@ -352,8 +350,8 @@
         </tr>
     </table>
 
-    <!-- Decorative Top Line -->
-    <div class="brand-divider"></div>
+    <!-- Subtle Divider Line -->
+    <div class="divider-line"></div>
 
     <!-- Customer & Delivery Two Columns -->
     <table class="cards-table">
@@ -413,9 +411,9 @@
             <tr>
                 <th style="width: 25px;" class="th-center">#</th>
                 <th>Descripción del Producto</th>
-                <th style="width: 80px;" class="th-right">Precio Unit.</th>
+                <th style="width: 75px;" class="th-right">Precio Unit.</th>
                 <th style="width: 45px;" class="th-center">Cant.</th>
-                <th style="width: 85px;" class="th-right">Subtotal</th>
+                <th style="width: 80px;" class="th-right">Subtotal</th>
             </tr>
         </thead>
         <tbody>
@@ -432,7 +430,7 @@
                     </td>
                     <td class="th-right">${{ number_format($item->unit_price, 2) }}</td>
                     <td class="th-center" style="font-weight: bold;">{{ $item->quantity }}</td>
-                    <td class="th-right" style="font-weight: bold; color: #A95058;">${{ number_format($item->total_price, 2) }}</td>
+                    <td class="th-right" style="font-weight: bold;">${{ number_format($item->total_price, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
