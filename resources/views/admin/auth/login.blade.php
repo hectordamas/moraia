@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ asset('css/variables.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/base.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/components.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/variables.css') }}?v={{ file_exists(public_path('css/variables.css')) ? filemtime(public_path('css/variables.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/base.css') }}?v={{ file_exists(public_path('css/base.css')) ? filemtime(public_path('css/base.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/components.css') }}?v={{ file_exists(public_path('css/components.css')) ? filemtime(public_path('css/components.css')) : '2.0' }}">
 </head>
 <body style="background-color: #242020; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
     <div style="background-color: #FFFFFF; width: 100%; max-width: 420px; border-radius: var(--radius-sm); padding: 40px; box-shadow: var(--shadow-lg);">

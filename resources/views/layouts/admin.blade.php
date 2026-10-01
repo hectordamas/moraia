@@ -12,10 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- CSS System -->
-    <link rel="stylesheet" href="{{ asset('css/variables.css') }}?v=1.0">
-    <link rel="stylesheet" href="{{ asset('css/base.css') }}?v=1.0">
-    <link rel="stylesheet" href="{{ asset('css/components.css') }}?v=1.0">
-    <link rel="stylesheet" href="{{ asset('css/admin.css') }}?v=1.0">
+    <link rel="stylesheet" href="{{ asset('css/variables.css') }}?v={{ file_exists(public_path('css/variables.css')) ? filemtime(public_path('css/variables.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/base.css') }}?v={{ file_exists(public_path('css/base.css')) ? filemtime(public_path('css/base.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/components.css') }}?v={{ file_exists(public_path('css/components.css')) ? filemtime(public_path('css/components.css')) : '2.0' }}">
+    <link rel="stylesheet" href="{{ asset('css/admin.css') }}?v={{ file_exists(public_path('css/admin.css')) ? filemtime(public_path('css/admin.css')) : '2.0' }}">
     @stack('styles')
 </head>
 <body>
