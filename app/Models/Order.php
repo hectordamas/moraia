@@ -75,43 +75,91 @@ class Order extends Model
 
     public function generateWhatsAppUrl(): string
     {
-        $phone = '584120206548';
+        $phone = Setting::get('contact_whatsapp_clean', '584120206548');
+        $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
 
-        $msg = "🌸 *¡Hola Moraia! Acabo de registrar mi pedido en la web:*\n\n";
-        $msg .= "📋 *Orden:* #{$this->order_code}\n";
-        $msg .= "👤 *Cliente:* {$this->full_name}\n";
-        $msg .= "📱 *WhatsApp:* {$this->customer_whatsapp}\n";
-        $msg .= "📍 *Entrega:* {$this->delivery_method_label} - {$this->delivery_city}\n";
-        $msg .= "🏠 *Dirección:* {$this->delivery_address}\n\n";
+        $lines = [];
+        $lines[] = '🌸 *NUEVO PEDIDO — MORAIA* 🌸';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+        $lines[] = "🧾 *Orden:* #{$this->order_code}";
+        if ($this->created_at) {
+            $lines[] = "📅 *Fecha:* {$this->created_at->format('d/m/Y h:i A')}";
+        }
+
+        $lines[] = '';
+        $lines[] = '👤 *DATOS DEL CLIENTE*';
+        $lines[] = "• *Nombre:* {$this->full_name}";
+        $lines[] = "• *Teléfono / WhatsApp:* {$this->customer_whatsapp}";
+        if ($this->customer_phone && $this->customer_phone !== $this->customer_whatsapp) {
+            $lines[] = "• *Teléfono Alt.:* {$this->customer_phone}";
+        }
+        if ($this->customer_email) {
+            $lines[] = "• *Email:* {$this->customer_email}";
+        }
+
+        $lines[] = '';
+        $lines[] = '🚚 *INFORMACIÓN DE ENTREGA*';
+        $lines[] = "• *Método:* {$this->delivery_method_label}";
+        $lines[] = "• *Ciudad:* {$this->delivery_city}";
+        $lines[] = "• *Dirección:* {$this->delivery_address}";
 
         if ($this->is_gift) {
-            $msg .= "🎁 *Es un Regalo:* Sí\n";
+            $lines[] = '';
+            $lines[] = '🎁 *DETALLES DEL REGALO*';
             if ($this->gift_recipient_name) {
-                $msg .= "💝 *Para:* {$this->gift_recipient_name}\n";
+                $lines[] = "• *Para:* {$this->gift_recipient_name}";
             }
             if ($this->gift_card_message) {
-                $msg .= "💌 *Mensaje de Tarjeta:* \"{$this->gift_card_message}\"\n";
+                $lines[] = "• *Mensaje en tarjeta:* \"{$this->gift_card_message}\"";
             }
-            $msg .= "\n";
         }
 
-        $msg .= "🛍️ *Detalle del Pedido:*\n";
-        foreach ($this->items as $item) {
+        $lines[] = '';
+        $lines[] = '🛍️ *DETALLE DE PRODUCTOS*';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+
+        $totalUnits = 0;
+        $itemsCount = count($items);
+        foreach ($items as $index => $item) {
             $variant = $item->variant_details ? " ({$item->variant_details})" : '';
-            $msg .= "• {$item->quantity}x {$item->product_name}{$variant} - $".number_format($item->total_price, 2)."\n";
+            $unitPrice = number_format($item->unit_price, 2);
+            $itemTotal = number_format($item->total_price, 2);
+            $totalUnits += $item->quantity;
+
+            $lines[] = "▫️ *{$item->product_name}*{$variant}";
+            $lines[] = "   └ {$item->quantity} unid. × \${$unitPrice} = *{$itemTotal} US\$*";
+
+            if ($index < $itemsCount - 1) {
+                $lines[] = '────────────────────';
+            }
         }
 
-        $msg .= "\n💰 *Subtotal:* $".number_format($this->subtotal, 2)."\n";
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+        $lines[] = '💰 *RESUMEN DE LA ORDEN*';
+        $lines[] = "• *Total Unidades:* {$totalUnits}";
+        $lines[] = '• *Subtotal:* $'.number_format($this->subtotal, 2).' US$';
+
         if ($this->shipping_fee > 0) {
-            $msg .= '🚚 *Envío:* $'.number_format($this->shipping_fee, 2)."\n";
+            $lines[] = '• *Envío:* $'.number_format($this->shipping_fee, 2).' US$';
+        } elseif ($this->delivery_method === 'envio_nacional') {
+            $lines[] = '• *Envío:* Cobro en Destino';
+        } else {
+            $lines[] = '• *Envío:* Gratis / Retiro';
         }
-        $msg .= '✨ *Total:* $'.number_format($this->total, 2)."\n\n";
+
+        $lines[] = '💳 *TOTAL A PAGAR:* *'.number_format($this->total, 2).' US$*';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
 
         if ($this->customer_notes) {
-            $msg .= "📝 *Notas adicionales:* {$this->customer_notes}\n\n";
+            $lines[] = '';
+            $lines[] = '📝 *Notas adicionales:*';
+            $lines[] = "_{$this->customer_notes}_";
         }
 
-        $msg .= '¿Podrían indicarme los métodos de pago disponibles para concretar mi orden? ¡Muchas gracias! 💕';
+        $lines[] = '';
+        $lines[] = '✨ _¡Hola! Acabo de registrar mi pedido en la web. ¿Podrían confirmarme la disponibilidad y los datos de pago para concretar la compra? ¡Muchas gracias!_ 💕';
+
+        $msg = implode("\n", $lines);
 
         return "https://wa.me/{$phone}?text=".rawurlencode($msg);
     }
@@ -123,10 +171,28 @@ class Order extends Model
             $cleanPhone = '58'.$cleanPhone;
         }
 
-        $msg = "Hola {$this->customer_name}, te escribimos de *MORAIA* 💕\n";
-        $msg .= "Estamos procesando tu pedido *#{$this->order_code}*.\n";
-        $msg .= 'Total a pagar: $'.number_format($this->total, 2)."\n\n";
-        $msg .= '¿Deseas coordinar el pago y los detalles de tu entrega?';
+        $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
+
+        $lines = [];
+        $lines[] = '🌸 *MORAIA BOUTIQUE* 🌸';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+        $lines[] = "¡Hola *{$this->customer_name}*, un gusto saludarte! 💕";
+        $lines[] = "Te escribimos para coordinar tu orden *#{$this->order_code}*.";
+        $lines[] = '';
+        $lines[] = '🛍️ *Resumen del Pedido:*';
+
+        foreach ($items as $item) {
+            $variant = $item->variant_details ? " ({$item->variant_details})" : '';
+            $lines[] = "• {$item->quantity}x {$item->product_name}{$variant} - $".number_format($item->total_price, 2).' US$';
+        }
+
+        $lines[] = '';
+        $lines[] = '💳 *Total a pagar:* $'.number_format($this->total, 2).' US$';
+        $lines[] = "📍 *Modalidad:* {$this->delivery_method_label} ({$this->delivery_city})";
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+        $lines[] = '¿Deseas que te compartamos los datos de pago (Pago Móvil, Zelle, Efectivo) para procesar tu entrega?';
+
+        $msg = implode("\n", $lines);
 
         return "https://wa.me/{$cleanPhone}?text=".rawurlencode($msg);
     }

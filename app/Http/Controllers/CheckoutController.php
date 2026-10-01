@@ -106,30 +106,16 @@ class CheckoutController extends Controller
         // Clear cart from session
         session()->forget('cart');
 
+        $order->load('items');
+
         if ($request->expectsJson() || $request->ajax()) {
-            $deliveryLabel = match ($order->delivery_method) {
-                'delivery_caracas' => 'Delivery en Caracas',
-                'envio_nacional' => 'Envío Nacional (Cobro en Destino)',
-                'pickup' => 'Retiro Personal',
-                default => $order->delivery_method,
-            };
-
-            $whatsappText = "¡Hola Moraia! 🌸 Acabo de registrar mi pedido {$order->order_code}:\n\n"
-                ."👤 Cliente: {$order->customer_name} {$order->customer_lastname}\n"
-                ."📱 WhatsApp: {$order->customer_whatsapp}\n"
-                ."📍 Entrega: {$order->delivery_city} ({$deliveryLabel})\n"
-                ."🏠 Dirección: {$order->delivery_address}\n"
-                .'💰 Total a Pagar: $'.number_format($order->total, 2)."\n\n"
-                .'¿Me podrían confirmar la disponibilidad y los datos para realizar el pago?';
-
-            $whatsappUrl = 'https://wa.me/584120206548?text='.urlencode($whatsappText);
-
             return response()->json([
                 'success' => true,
                 'order_code' => $order->order_code,
                 'customer_name' => $order->customer_name,
                 'total' => number_format($order->total, 2),
-                'whatsapp_url' => $whatsappUrl,
+                'total_formatted' => '$'.number_format($order->total, 2).' US$',
+                'whatsapp_url' => $order->generateWhatsAppUrl(),
                 'redirect_url' => route('order.success', ['order_code' => $order->order_code]),
             ]);
         }
