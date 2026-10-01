@@ -79,48 +79,44 @@ class Order extends Model
         $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
 
         $lines = [];
-        $lines[] = '================================';
-        $lines[] = '   *NUEVO PEDIDO - MORAIA*';
-        $lines[] = '================================';
-        $lines[] = "*Orden:* #{$this->order_code}";
+        $lines[] = '*NUEVO PEDIDO — MORAIA*';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+        $lines[] = "• *Orden:* #{$this->order_code}";
         if ($this->created_at) {
-            $lines[] = "*Fecha:* {$this->created_at->format('d/m/Y h:i A')}";
+            $lines[] = "• *Fecha:* {$this->created_at->format('d/m/Y h:i A')}";
         }
 
         $lines[] = '';
         $lines[] = '*DATOS DEL CLIENTE*';
-        $lines[] = '--------------------------------';
-        $lines[] = "*Nombre:* {$this->full_name}";
-        $lines[] = "*WhatsApp:* {$this->customer_whatsapp}";
+        $lines[] = "• *Nombre:* {$this->full_name}";
+        $lines[] = "• *Teléfono / WhatsApp:* {$this->customer_whatsapp}";
         if ($this->customer_phone && $this->customer_phone !== $this->customer_whatsapp) {
-            $lines[] = "*Telefono Alt.:* {$this->customer_phone}";
+            $lines[] = "• *Teléfono Alt.:* {$this->customer_phone}";
         }
         if ($this->customer_email) {
-            $lines[] = "*Email:* {$this->customer_email}";
+            $lines[] = "• *Email:* {$this->customer_email}";
         }
 
         $lines[] = '';
-        $lines[] = '*INFORMACION DE ENTREGA*';
-        $lines[] = '--------------------------------';
-        $lines[] = "*Metodo:* {$this->delivery_method_label}";
-        $lines[] = "*Ciudad:* {$this->delivery_city}";
-        $lines[] = "*Direccion:* {$this->delivery_address}";
+        $lines[] = '*INFORMACIÓN DE ENTREGA*';
+        $lines[] = "• *Método:* {$this->delivery_method_label}";
+        $lines[] = "• *Ciudad:* {$this->delivery_city}";
+        $lines[] = "• *Dirección:* {$this->delivery_address}";
 
         if ($this->is_gift) {
             $lines[] = '';
             $lines[] = '*DETALLES DEL REGALO*';
-            $lines[] = '--------------------------------';
             if ($this->gift_recipient_name) {
-                $lines[] = "*Para:* {$this->gift_recipient_name}";
+                $lines[] = "• *Para:* {$this->gift_recipient_name}";
             }
             if ($this->gift_card_message) {
-                $lines[] = "*Mensaje:* \"{$this->gift_card_message}\"";
+                $lines[] = "• *Mensaje en tarjeta:* \"{$this->gift_card_message}\"";
             }
         }
 
         $lines[] = '';
         $lines[] = '*DETALLE DE PRODUCTOS*';
-        $lines[] = '================================';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
 
         $totalUnits = 0;
         $itemsCount = count($items);
@@ -130,30 +126,29 @@ class Order extends Model
             $itemTotal = number_format($item->total_price, 2);
             $totalUnits += $item->quantity;
 
-            $lines[] = "* {$item->product_name}{$variant}";
-            $lines[] = "  {$item->quantity} unid. x \${$unitPrice} = *{$itemTotal} US\$*";
+            $lines[] = "*{$item->product_name}*{$variant}";
+            $lines[] = "   └ {$item->quantity} unid. × \${$unitPrice} = *{$itemTotal} US\$*";
 
             if ($index < $itemsCount - 1) {
-                $lines[] = '--------------------------------';
+                $lines[] = '────────────────────';
             }
         }
 
-        $lines[] = '================================';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
         $lines[] = '*RESUMEN DE LA ORDEN*';
-        $lines[] = '================================';
-        $lines[] = "* Total Unidades: {$totalUnits}";
-        $lines[] = '* Subtotal: $'.number_format($this->subtotal, 2).' US$';
+        $lines[] = "• *Total Unidades:* {$totalUnits}";
+        $lines[] = '• *Subtotal:* $'.number_format($this->subtotal, 2).' US$';
 
         if ($this->shipping_fee > 0) {
-            $lines[] = '* Envio: $'.number_format($this->shipping_fee, 2).' US$';
+            $lines[] = '• *Envío:* $'.number_format($this->shipping_fee, 2).' US$';
         } elseif ($this->delivery_method === 'envio_nacional') {
-            $lines[] = '* Envio: Cobro en Destino';
+            $lines[] = '• *Envío:* Cobro en Destino';
         } else {
-            $lines[] = '* Envio: Gratis / Retiro';
+            $lines[] = '• *Envío:* Gratis / Retiro';
         }
 
-        $lines[] = '* TOTAL A PAGAR: *'.number_format($this->total, 2).' US$*';
-        $lines[] = '================================';
+        $lines[] = '• *TOTAL A PAGAR:* *'.number_format($this->total, 2).' US$*';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
 
         if ($this->customer_notes) {
             $lines[] = '';
@@ -162,7 +157,7 @@ class Order extends Model
         }
 
         $lines[] = '';
-        $lines[] = '_Hola, acabo de registrar mi pedido en la web de Moraia. Deseo confirmar la disponibilidad y los datos de pago para concretar mi compra. Muchas gracias._';
+        $lines[] = '_¡Hola! Acabo de registrar mi pedido en la web. ¿Podrían confirmarme la disponibilidad y los datos de pago para concretar la compra? ¡Muchas gracias!_';
 
         $msg = implode("\n", $lines);
 
@@ -179,24 +174,23 @@ class Order extends Model
         $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
 
         $lines = [];
-        $lines[] = '================================';
-        $lines[] = '   *MORAIA BOUTIQUE*';
-        $lines[] = '================================';
-        $lines[] = "Hola *{$this->customer_name}*, un gusto saludarte.";
+        $lines[] = '*MORAIA BOUTIQUE*';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+        $lines[] = "¡Hola *{$this->customer_name}*, un gusto saludarte!";
         $lines[] = "Te escribimos para coordinar tu orden *#{$this->order_code}*.";
         $lines[] = '';
         $lines[] = '*Resumen del Pedido:*';
 
         foreach ($items as $item) {
             $variant = $item->variant_details ? " ({$item->variant_details})" : '';
-            $lines[] = "* {$item->quantity}x {$item->product_name}{$variant} - $".number_format($item->total_price, 2).' US$';
+            $lines[] = "• {$item->quantity}x {$item->product_name}{$variant} - $".number_format($item->total_price, 2).' US$';
         }
 
         $lines[] = '';
-        $lines[] = '*Total a pagar:* $'.number_format($this->total, 2).' US$';
-        $lines[] = "*Modalidad:* {$this->delivery_method_label} ({$this->delivery_city})";
-        $lines[] = '================================';
-        $lines[] = '¿Deseas que te compartamos los datos de pago (Pago Movil, Zelle, Efectivo) para procesar tu entrega?';
+        $lines[] = '• *Total a pagar:* $'.number_format($this->total, 2).' US$';
+        $lines[] = "• *Modalidad:* {$this->delivery_method_label} ({$this->delivery_city})";
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━';
+        $lines[] = '¿Deseas que te compartamos los datos de pago (Pago Móvil, Zelle, Efectivo) para procesar tu entrega?';
 
         $msg = implode("\n", $lines);
 
