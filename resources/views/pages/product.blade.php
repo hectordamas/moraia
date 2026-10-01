@@ -47,20 +47,57 @@
 
     <!-- Product Detail Layout -->
     <div class="product-detail-grid">
-        <!-- Gallery Column -->
+        <!-- Gallery Column (Interactive Carousel & Thumbnails) -->
         <div class="product-gallery">
-            <div class="product-main-img-wrap">
+            @php
+                $galleryImages = $product->images->isNotEmpty() 
+                    ? $product->images 
+                    : collect([(object)['image_path' => $product->cover_image_url]]);
+            @endphp
+
+            <div class="product-gallery-slider" id="product-gallery-slider" data-total-slides="{{ $galleryImages->count() }}">
                 @if($product->badge)
                     <span class="badge badge-rose card-product-badge">{{ $product->badge }}</span>
                 @endif
-                <img src="{{ asset($product->cover_image_url) }}" alt="{{ $product->name }}" class="product-main-img" id="main-product-image">
+
+                <div class="product-gallery-viewport" id="product-gallery-viewport">
+                    <div class="product-gallery-track" id="product-gallery-track">
+                        @foreach($galleryImages as $idx => $img)
+                            <div class="product-gallery-slide {{ $idx === 0 ? 'active' : '' }}" data-slide-index="{{ $idx }}">
+                                <img src="{{ asset($img->image_path) }}" alt="{{ $product->name }} - Foto {{ $idx + 1 }}" class="product-gallery-img">
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                @if($galleryImages->count() > 1)
+                    <!-- Navigation Arrows -->
+                    <button type="button" class="gallery-nav-arrow gallery-nav-prev" id="gallery-prev-btn" aria-label="Foto anterior">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                    </button>
+                    <button type="button" class="gallery-nav-arrow gallery-nav-next" id="gallery-next-btn" aria-label="Foto siguiente">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </button>
+
+                    <!-- Dot Indicators -->
+                    <div class="gallery-dots-bar" id="gallery-dots">
+                        @foreach($galleryImages as $idx => $img)
+                            <button type="button" class="gallery-dot-btn {{ $idx === 0 ? 'active' : '' }}" data-slide-to="{{ $idx }}" aria-label="Ir a foto {{ $idx + 1 }}"></button>
+                        @endforeach
+                    </div>
+                @endif
             </div>
 
-            @if($product->images->count() > 1)
-                <div class="product-thumbnails">
-                    @foreach($product->images as $idx => $img)
+            @if($galleryImages->count() > 1)
+                <div class="product-thumbnails" id="product-thumbnails">
+                    @foreach($galleryImages as $idx => $img)
                         <button type="button" 
                                 class="product-thumb-btn {{ $idx === 0 ? 'active' : '' }}" 
+                                data-slide-to="{{ $idx }}" 
                                 data-full-img="{{ asset($img->image_path) }}" 
                                 aria-label="Ver foto {{ $idx + 1 }}">
                             <img src="{{ asset($img->image_path) }}" alt="{{ $product->name }}" class="product-thumb-img">
@@ -199,17 +236,38 @@
         </div>
     @endif
 
-    <!-- Related Products -->
+    <!-- Related Products Carousel -->
     @if($relatedProducts->isNotEmpty())
-        <div style="margin-top: var(--space-20);">
-            <div class="section-header">
-                <span class="section-tag">Combina & Descubre</span>
-                <h2 class="section-title">Productos Relacionados</h2>
+        <div class="related-products-section">
+            <div class="related-products-header">
+                <div>
+                    <span class="section-tag">Combina & Descubre</span>
+                    <h2 class="section-title">Productos Relacionados</h2>
+                </div>
+                @if($relatedProducts->count() > 1)
+                    <div class="related-carousel-nav">
+                        <button type="button" class="related-nav-btn" id="related-prev-btn" aria-label="Productos anteriores">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                            </svg>
+                        </button>
+                        <button type="button" class="related-nav-btn" id="related-next-btn" aria-label="Productos siguientes">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                        </button>
+                    </div>
+                @endif
             </div>
-            <div class="product-grid">
-                @foreach($relatedProducts as $relProduct)
-                    @include('partials.product-card', ['product' => $relProduct])
-                @endforeach
+
+            <div class="related-carousel-viewport" id="related-carousel-viewport">
+                <div class="related-carousel-track" id="related-carousel-track">
+                    @foreach($relatedProducts as $relProduct)
+                        <div class="related-carousel-item">
+                            @include('partials.product-card', ['product' => $relProduct])
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </div>
     @endif

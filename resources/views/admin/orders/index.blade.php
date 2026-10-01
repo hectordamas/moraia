@@ -11,6 +11,14 @@
                 Revisa pedidos registrados, cambia estados y contacta a los clientes por WhatsApp con un solo clic.
             </p>
         </div>
+        <div>
+            <a href="{{ route('admin.pos.index') }}" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Nueva Orden / POS
+            </a>
+        </div>
     </div>
 
     <!-- Filters -->

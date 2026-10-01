@@ -339,3 +339,33 @@ test('admin can manage product variants such as sizes and colors', function () {
     expect($updatedProduct->variants()->where('name', 'Negro Noche')->exists())->toBeTrue();
     expect($updatedProduct->variants()->where('name', 'Rosa Mauve')->exists())->toBeFalse();
 });
+
+test('adding product with variants to cart requires selecting a variant', function () {
+    $productWithVariants = Product::whereHas('variants')->first();
+    expect($productWithVariants)->not->toBeNull();
+
+    // Attempt to add without variant_id
+    $response = $this->postJson(route('cart.add'), [
+        'product_id' => $productWithVariants->id,
+        'quantity' => 1,
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'requires_variant' => true,
+    ]);
+
+    // Now add with valid variant
+    $variant = $productWithVariants->variants->first();
+    $validResponse = $this->postJson(route('cart.add'), [
+        'product_id' => $productWithVariants->id,
+        'variant_id' => $variant->id,
+        'quantity' => 1,
+    ]);
+
+    $validResponse->assertStatus(200);
+    $validResponse->assertJson([
+        'success' => true,
+    ]);
+});

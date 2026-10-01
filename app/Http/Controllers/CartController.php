@@ -31,9 +31,20 @@ class CartController extends Controller
             'quantity' => 'nullable|integer|min:1|max:50',
         ]);
 
-        $product = Product::with('images')->findOrFail($request->input('product_id'));
+        $product = Product::with(['images', 'variants'])->findOrFail($request->input('product_id'));
+
+        $activeVariants = $product->variants->where('is_active', true);
+        if ($activeVariants->isNotEmpty() && ! $request->input('variant_id')) {
+            return response()->json([
+                'success' => false,
+                'requires_variant' => true,
+                'redirect_url' => route('product', $product->slug),
+                'message' => 'Por favor selecciona una talla o color para este producto.',
+            ], 422);
+        }
+
         $variant = $request->input('variant_id')
-            ? ProductVariant::find($request->input('variant_id'))
+            ? ProductVariant::where('is_active', true)->find($request->input('variant_id'))
             : null;
 
         $quantity = (int) ($request->input('quantity', 1));

@@ -76,6 +76,9 @@
     <!-- Mini-Cart Drawer -->
     @include('partials.cart-drawer')
 
+    <!-- Quick Variant Selector Modal -->
+    @include('partials.quick-variant-modal')
+
     <!-- Floating WhatsApp Action -->
     @include('partials.whatsapp-float')
 
@@ -106,7 +109,7 @@
     @endif
 
     <!-- JavaScript Application -->
-    <script src="{{ asset('js/app.js') }}?v=1.0"></script>
+    <script src="{{ asset('js/app.js') }}?v={{ file_exists(public_path('js/app.js')) ? filemtime(public_path('js/app.js')) : '2.0' }}"></script>
     @stack('scripts')
 </body>
 </html>

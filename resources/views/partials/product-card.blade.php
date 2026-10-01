@@ -1,5 +1,6 @@
 @php
-    $firstVariant = $product->variants->first();
+    $activeVariants = $product->variants->where('is_active', true);
+    $hasVariants = $activeVariants->isNotEmpty();
 @endphp
 
 <article class="card-product">
@@ -21,11 +22,16 @@
                     class="btn btn-primary btn-sm btn-block" 
                     data-action="add-to-cart" 
                     data-product-id="{{ $product->id }}"
-                    data-variant-id="{{ $firstVariant?->id }}">
+                    data-product-name="{{ $product->name }}"
+                    data-product-price="{{ $product->price }}"
+                    data-product-image="{{ asset($product->cover_image_url) }}"
+                    data-product-category="{{ $product->category ? $product->category->name : '' }}"
+                    data-has-variants="{{ $hasVariants ? 'true' : 'false' }}"
+                    data-variants="{{ $hasVariants ? json_encode($activeVariants->values()) : '[]' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                Añadir a la Bolsa
+                <span>Añadir a la Bolsa</span>
             </button>
         </div>
     </div>
@@ -50,13 +56,18 @@
             @endif
         </div>
 
-        <!-- Mobile Always-Visible Add to Cart Button -->
+        <!-- Mobile Always-Visible Action Button -->
         <div class="card-product-mobile-action">
             <button type="button" 
                     class="btn btn-primary btn-sm btn-block" 
                     data-action="add-to-cart" 
                     data-product-id="{{ $product->id }}"
-                    data-variant-id="{{ $firstVariant?->id }}">
+                    data-product-name="{{ $product->name }}"
+                    data-product-price="{{ $product->price }}"
+                    data-product-image="{{ asset($product->cover_image_url) }}"
+                    data-product-category="{{ $product->category ? $product->category->name : '' }}"
+                    data-has-variants="{{ $hasVariants ? 'true' : 'false' }}"
+                    data-variants="{{ $hasVariants ? json_encode($activeVariants->values()) : '[]' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>

@@ -87,7 +87,7 @@ class ShopController extends Controller
             ->orderBy('sort_order', 'asc')
             ->get();
 
-        $products = Product::with(['images', 'category'])
+        $products = Product::with(['images', 'category', 'variants'])
             ->where('category_id', $category->id)
             ->where('is_active', true)
             ->orderBy('id', 'desc')
@@ -107,11 +107,14 @@ class ShopController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        $relatedProducts = Product::with(['images', 'category'])
-            ->where('category_id', $product->category_id)
+        $relatedProducts = Product::with(['images', 'category', 'variants'])
             ->where('id', '!=', $product->id)
             ->where('is_active', true)
-            ->take(4)
+            ->when($product->category_id, function ($query) use ($product) {
+                $query->orderByRaw('CASE WHEN category_id = ? THEN 0 ELSE 1 END', [$product->category_id]);
+            })
+            ->latest()
+            ->take(8)
             ->get();
 
         return view('pages.product', compact('product', 'relatedProducts'));

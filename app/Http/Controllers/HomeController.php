@@ -16,14 +16,14 @@ class HomeController extends Controller
             ->take(6)
             ->get();
 
-        $featuredProducts = Product::with(['images', 'category'])
+        $featuredProducts = Product::with(['images', 'category', 'variants'])
             ->where('is_active', true)
             ->where('is_featured', true)
             ->orderBy('id', 'desc')
             ->take(8)
             ->get();
 
-        $giftProducts = Product::with(['images', 'category'])
+        $giftProducts = Product::with(['images', 'category', 'variants'])
             ->where('is_active', true)
             ->whereHas('category', function ($q) {
                 $q->where('slug', 'regalos');
@@ -31,7 +31,7 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-        $intimateProducts = Product::with(['images', 'category'])
+        $intimateProducts = Product::with(['images', 'category', 'variants'])
             ->where('is_active', true)
             ->where('target_audience', 'moraia_intimo')
             ->take(4)

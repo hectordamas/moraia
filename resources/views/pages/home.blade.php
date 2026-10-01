@@ -256,21 +256,56 @@
         </div>
 
         <div class="reviews-trust-bar">
+            <!-- Metric 1: Happy Clients -->
             <div class="trust-metric-item">
-                <span class="trust-metric-number">+1,200</span>
-                <span class="trust-metric-label">Clientas Felices</span>
+                <div class="trust-metric-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                    </svg>
+                </div>
+                <div class="trust-metric-content">
+                    <span class="trust-metric-number">+1,200</span>
+                    <span class="trust-metric-label">Clientas Felices</span>
+                </div>
             </div>
+
+            <!-- Metric 2: Satisfaction -->
             <div class="trust-metric-item">
-                <span class="trust-metric-number">99.4%</span>
-                <span class="trust-metric-label">Satisfacción en Calidad</span>
+                <div class="trust-metric-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                    </svg>
+                </div>
+                <div class="trust-metric-content">
+                    <span class="trust-metric-number">99.4%</span>
+                    <span class="trust-metric-label">Satisfacción en Calidad</span>
+                </div>
             </div>
+
+            <!-- Metric 3: Fast Delivery -->
             <div class="trust-metric-item">
-                <span class="trust-metric-number">24h</span>
-                <span class="trust-metric-label">Delivery en Caracas</span>
+                <div class="trust-metric-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75A1.125 1.125 0 0 0 13.125 2.625h-7.5A1.125 1.125 0 0 0 4.5 3.75v10.5" />
+                    </svg>
+                </div>
+                <div class="trust-metric-content">
+                    <span class="trust-metric-number">24h</span>
+                    <span class="trust-metric-label">Delivery en Caracas</span>
+                </div>
             </div>
+
+            <!-- Metric 4: Discreet Shipping -->
             <div class="trust-metric-item">
-                <span class="trust-metric-number">100%</span>
-                <span class="trust-metric-label">Envíos Discretos</span>
+                <div class="trust-metric-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                </div>
+                <div class="trust-metric-content">
+                    <span class="trust-metric-number">100%</span>
+                    <span class="trust-metric-label">Envíos Discretos</span>
+                </div>
             </div>
         </div>
     </div>

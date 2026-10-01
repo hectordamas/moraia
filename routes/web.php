@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ContactMessageController as AdminMessageController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PosController as AdminPosController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\CartController;
@@ -69,7 +70,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/categories/reorder', [AdminCategoryController::class, 'reorder'])->name('categories.reorder');
         Route::resource('categories', AdminCategoryController::class);
 
-        // Orders Management
+        // Orders Management & Point of Sale (POS)
+        Route::get('/pos', [AdminPosController::class, 'index'])->name('pos.index');
+        Route::post('/pos/store', [AdminPosController::class, 'store'])->name('pos.store');
+        Route::get('/orders/create', fn () => redirect()->route('admin.pos.index'))->name('orders.create');
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::get('/orders/{order}/pdf', [AdminOrderController::class, 'downloadPdf'])->name('orders.pdf');
