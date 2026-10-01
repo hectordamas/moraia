@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,7 +36,7 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load('items.product');
+        $order->load(['items.product', 'items.variant']);
         $whatsAppCustomerUrl = $order->generateAdminWhatsAppUrl();
 
         return view('admin.orders.show', compact('order', 'whatsAppCustomerUrl'));
@@ -44,11 +45,35 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => 'required|string|in:Nueva,Confirmada,Preparando,Lista,Entregada,Cancelada',
+            'status' => 'required|string|in:Pendiente,Confirmada,Entregada,Cancelada',
         ]);
 
-        $order->update(['status' => $validated['status']]);
+        $oldStatus = $order->status;
+        $newStatus = $validated['status'];
 
-        return redirect()->back()->with('success', "Estado de orden actualizado a '{$validated['status']}'.");
+        if ($newStatus === 'Cancelada' && $oldStatus !== 'Cancelada') {
+            $order->restoreStock();
+        } elseif ($newStatus !== 'Cancelada' && $oldStatus === 'Cancelada') {
+            $order->decrementStock();
+        }
+
+        $order->update(['status' => $newStatus]);
+
+        return redirect()->back()->with('success', "Estado de orden actualizado a '{$newStatus}'.");
+    }
+
+    public function downloadPdf(Order $order)
+    {
+        $order->load(['items.product', 'items.variant']);
+
+        $pdf = Pdf::loadView('pdf.order-receipt', compact('order'))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'DejaVu Sans',
+            ]);
+
+        return $pdf->download("Comprobante-MORAIA-{$order->order_code}.pdf");
     }
 }

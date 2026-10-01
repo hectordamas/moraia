@@ -63,14 +63,56 @@ class Order extends Model
     public function getStatusBadgeClassAttribute(): string
     {
         return match ($this->status) {
-            'Nueva' => 'badge-new',
-            'Confirmada' => 'badge-confirmed',
-            'Preparando' => 'badge-preparing',
-            'Lista' => 'badge-ready',
+            'Pendiente', 'Nueva' => 'badge-pending',
+            'Confirmada', 'Preparando', 'Lista' => 'badge-confirmed',
             'Entregada' => 'badge-delivered',
             'Cancelada' => 'badge-cancelled',
             default => 'badge-default',
         };
+    }
+
+    public function decrementStock(): void
+    {
+        $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
+
+        foreach ($items as $item) {
+            if ($item->product_id) {
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    $newStock = max(0, $product->stock_quantity - $item->quantity);
+                    $product->update(['stock_quantity' => $newStock]);
+                }
+            }
+
+            if ($item->variant_id) {
+                $variant = ProductVariant::find($item->variant_id);
+                if ($variant) {
+                    $newStock = max(0, $variant->stock_quantity - $item->quantity);
+                    $variant->update(['stock_quantity' => $newStock]);
+                }
+            }
+        }
+    }
+
+    public function restoreStock(): void
+    {
+        $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
+
+        foreach ($items as $item) {
+            if ($item->product_id) {
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    $product->increment('stock_quantity', $item->quantity);
+                }
+            }
+
+            if ($item->variant_id) {
+                $variant = ProductVariant::find($item->variant_id);
+                if ($variant) {
+                    $variant->increment('stock_quantity', $item->quantity);
+                }
+            }
+        }
     }
 
     public function generateWhatsAppUrl(): string

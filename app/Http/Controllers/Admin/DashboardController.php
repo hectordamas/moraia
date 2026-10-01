@@ -14,7 +14,7 @@ class DashboardController extends Controller
     {
         $totalOrders = Order::count();
         $totalRevenue = Order::where('status', '!=', 'Cancelada')->sum('total');
-        $pendingOrdersCount = Order::where('status', 'Nueva')->count();
+        $pendingOrdersCount = Order::where('status', 'Pendiente')->count();
         $totalProducts = Product::count();
         $unreadMessagesCount = ContactMessage::where('status', 'Pendiente')->count();
 

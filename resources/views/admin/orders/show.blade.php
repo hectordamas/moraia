@@ -15,7 +15,15 @@
                         Registrada el {{ $order->created_at->format('d/m/Y \a \l\a\s H:i') }} ({{ $order->created_at->diffForHumans() }})
                     </span>
                 </div>
-                <a href="{{ route('admin.orders.index') }}" class="btn btn-outline btn-sm">&larr; Volver al Listado</a>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('admin.orders.pdf', $order->id) }}" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Descargar PDF
+                    </a>
+                    <a href="{{ route('admin.orders.index') }}" class="btn btn-outline btn-sm">&larr; Volver al Listado</a>
+                </div>
             </div>
 
             <!-- Items Table -->
@@ -151,10 +159,8 @@
                 <div class="form-group">
                     <label class="form-label" for="status">Cambiar Estado:</label>
                     <select name="status" id="status" class="form-select">
-                        <option value="Nueva" {{ $order->status === 'Nueva' ? 'selected' : '' }}>Nueva</option>
-                        <option value="Confirmada" {{ $order->status === 'Confirmada' ? 'selected' : '' }}>Confirmada</option>
-                        <option value="Preparando" {{ $order->status === 'Preparando' ? 'selected' : '' }}>Preparando</option>
-                        <option value="Lista" {{ $order->status === 'Lista' ? 'selected' : '' }}>Lista</option>
+                        <option value="Pendiente" {{ in_array($order->status, ['Pendiente', 'Nueva', 'Preparando']) ? 'selected' : '' }}>Pendiente</option>
+                        <option value="Confirmada" {{ in_array($order->status, ['Confirmada', 'Lista']) ? 'selected' : '' }}>Confirmada</option>
                         <option value="Entregada" {{ $order->status === 'Entregada' ? 'selected' : '' }}>Entregada</option>
                         <option value="Cancelada" {{ $order->status === 'Cancelada' ? 'selected' : '' }}>Cancelada</option>
                     </select>

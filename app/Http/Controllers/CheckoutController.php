@@ -87,13 +87,14 @@ class CheckoutController extends Controller
             'subtotal' => $subtotal,
             'shipping_fee' => $shippingFee,
             'total' => $total,
-            'status' => 'Nueva',
+            'status' => 'Pendiente',
         ]);
 
         foreach ($cart as $item) {
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $item['product_id'] ?? null,
+                'variant_id' => $item['variant_id'] ?? null,
                 'product_name' => $item['name'],
                 'product_image' => $item['image'] ?? null,
                 'variant_details' => $item['variant_name'] ?? null,
@@ -103,10 +104,12 @@ class CheckoutController extends Controller
             ]);
         }
 
+        // Decrement stock for all items
+        $order->load('items');
+        $order->decrementStock();
+
         // Clear cart from session
         session()->forget('cart');
-
-        $order->load('items');
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
@@ -116,6 +119,7 @@ class CheckoutController extends Controller
                 'total' => number_format($order->total, 2),
                 'total_formatted' => '$'.number_format($order->total, 2).' US$',
                 'whatsapp_url' => $order->generateWhatsAppUrl(),
+                'pdf_url' => route('order.pdf', ['order_code' => $order->order_code]),
                 'redirect_url' => route('order.success', ['order_code' => $order->order_code]),
             ]);
         }

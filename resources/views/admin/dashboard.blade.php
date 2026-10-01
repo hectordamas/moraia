@@ -39,7 +39,7 @@
             </svg>
         </div>
         <div class="stat-info">
-            <span class="stat-label">Órdenes Nuevas</span>
+            <span class="stat-label">Órdenes Pendientes</span>
             <span class="stat-val">{{ $pendingOrdersCount }}</span>
         </div>
     </div>

@@ -19,10 +19,8 @@
         
         <select name="status" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
             <option value="">Todos los Estados</option>
-            <option value="Nueva" {{ request('status') === 'Nueva' ? 'selected' : '' }}>Nueva</option>
+            <option value="Pendiente" {{ request('status') === 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
             <option value="Confirmada" {{ request('status') === 'Confirmada' ? 'selected' : '' }}>Confirmada</option>
-            <option value="Preparando" {{ request('status') === 'Preparando' ? 'selected' : '' }}>Preparando</option>
-            <option value="Lista" {{ request('status') === 'Lista' ? 'selected' : '' }}>Lista</option>
             <option value="Entregada" {{ request('status') === 'Entregada' ? 'selected' : '' }}>Entregada</option>
             <option value="Cancelada" {{ request('status') === 'Cancelada' ? 'selected' : '' }}>Cancelada</option>
         </select>

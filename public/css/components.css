@@ -142,6 +142,7 @@
 }
 
 .badge-new { background-color: #5A7E9E; color: #FFFFFF; }
+.badge-pending { background-color: #D9822B; color: #FFFFFF; }
 .badge-confirmed { background-color: #4E8B71; color: #FFFFFF; }
 .badge-preparing { background-color: #D9822B; color: #FFFFFF; }
 .badge-ready { background-color: #7B68EE; color: #FFFFFF; }

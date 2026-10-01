@@ -33,10 +33,11 @@ Route::post('/cart/update', [CartController::class, 'update'])->name('cart.updat
 Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
 Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
-// Checkout & Order Success (WhatsApp Redirection)
+// Checkout & Order Success (WhatsApp Redirection & PDF Receipt)
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/order-success/{order_code}', [OrderSuccessController::class, 'show'])->name('order.success');
+Route::get('/order-success/{order_code}/pdf', [OrderSuccessController::class, 'downloadPdf'])->name('order.pdf');
 
 // Information & Legal Pages
 Route::get('/about', [PageController::class, 'about'])->name('about');
@@ -70,6 +71,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Orders Management
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{order}/pdf', [AdminOrderController::class, 'downloadPdf'])->name('orders.pdf');
         Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
 
         // Contact Messages

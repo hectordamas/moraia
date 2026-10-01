@@ -513,11 +513,16 @@ window.submitDrawerCheckout = function(e) {
       const codeEl = document.getElementById('drawer-order-code-display');
       const totalEl = document.getElementById('drawer-order-total-display');
       const waBtn = document.getElementById('drawer-whatsapp-btn');
+      const pdfBtn = document.getElementById('drawer-pdf-btn');
 
       if (codeEl) codeEl.textContent = data.order_code;
       if (totalEl) totalEl.textContent = data.total_formatted;
       if (waBtn && data.whatsapp_url) {
         waBtn.href = data.whatsapp_url;
+      }
+      if (pdfBtn && data.pdf_url) {
+        pdfBtn.href = data.pdf_url;
+        pdfBtn.style.display = 'inline-flex';
       }
 
       document.querySelectorAll('.cart-count-badge').forEach(badge => {
