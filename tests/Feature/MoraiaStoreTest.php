@@ -296,10 +296,9 @@ test('admin can manage product variants such as sizes and colors', function () {
         ],
     ]);
 
-    $response->assertRedirect('/admin/products');
-
     $product = Product::where('name', 'Bralette Prueba Variantes')->first();
     expect($product)->not->toBeNull();
+    $response->assertRedirect('/admin/products/'.$product->id.'/edit');
     expect($product->variants()->count())->toBe(2);
 
     // Update variants
@@ -331,7 +330,7 @@ test('admin can manage product variants such as sizes and colors', function () {
         ],
     ]);
 
-    $updateResponse->assertRedirect('/admin/products');
+    $updateResponse->assertRedirect('/admin/products/'.$product->id.'/edit');
 
     $updatedProduct = $product->fresh(['variants']);
     expect($updatedProduct->variants()->count())->toBe(2);
@@ -368,4 +367,50 @@ test('adding product with variants to cart requires selecting a variant', functi
     $validResponse->assertJson([
         'success' => true,
     ]);
+});
+
+test('adding product with customizations computes total price and stores options in cart', function () {
+    $product = Product::create([
+        'category_id' => Category::first()->id,
+        'name' => 'Mini Box Regalo Personalizada',
+        'slug' => 'mini-box-regalo-personalizada',
+        'price' => 20.00,
+        'stock_quantity' => 10,
+        'is_active' => true,
+        'options_config' => [
+            ['name' => 'Copa', 'values' => ['34B', '36B']],
+        ],
+        'customizations_config' => [
+            [
+                'title' => 'Empaque',
+                'selectionType' => 'single',
+                'options' => [
+                    ['label' => 'Caja de Lujo', 'price' => 5.00],
+                ],
+            ],
+        ],
+    ]);
+
+    $response = $this->postJson(route('cart.add'), [
+        'product_id' => $product->id,
+        'quantity' => 1,
+        'customizations' => [
+            ['group' => 'Copa', 'label' => '34B', 'price' => 0],
+            ['group' => 'Empaque', 'label' => 'Caja de Lujo', 'price' => 5.00],
+        ],
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson([
+        'success' => true,
+        'cartCount' => 1,
+        'subtotal' => 25.00,
+    ]);
+
+    $cart = session()->get('cart');
+    expect($cart)->not->toBeEmpty();
+    $firstItem = reset($cart);
+    expect($firstItem['price'])->toEqual(25.00);
+    expect($firstItem['customization_text'])->toContain('Copa: 34B');
+    expect($firstItem['customization_text'])->toContain('Empaque: Caja de Lujo (+$5.00)');
 });

@@ -83,13 +83,15 @@ class DashboardController extends Controller
             $ordersQuery->where('created_at', '<=', $endDate);
         }
 
-        // Metrics / KPIs
-        $totalOrders = (clone $ordersQuery)->count();
-        $totalRevenue = (clone $ordersQuery)->where('status', '!=', 'Cancelada')->sum('total');
+        // Metrics & Sales KPIs (Based exclusively on Delivered / Completed orders)
+        $deliveredOrdersQuery = (clone $ordersQuery)->where('status', 'Entregada');
+        $totalOrders = (clone $deliveredOrdersQuery)->count();
+        $totalRevenue = (clone $deliveredOrdersQuery)->sum('total');
         $averageOrderValue = $totalOrders > 0
-            ? ((clone $ordersQuery)->where('status', '!=', 'Cancelada')->avg('total') ?? 0)
+            ? ((clone $deliveredOrdersQuery)->avg('total') ?? 0)
             : 0;
 
+        // Order Status Overview Indicators
         $pendingOrdersCount = (clone $ordersQuery)->where('status', 'Pendiente')->count();
         $confirmedOrdersCount = (clone $ordersQuery)->where('status', 'Confirmada')->count();
         $deliveredOrdersCount = (clone $ordersQuery)->where('status', 'Entregada')->count();
@@ -100,11 +102,11 @@ class DashboardController extends Controller
         $activeProductsCount = Product::where('is_active', true)->count();
         $unreadMessagesCount = ContactMessage::where('status', 'Pendiente')->count();
 
-        // Timeline Sales Chart Data
+        // Timeline Sales Chart Data (Delivered orders only)
         $salesTimeline = $this->buildSalesTimeline($startDate, $endDate, $period);
 
-        // Delivery Methods Distribution
-        $deliveryBreakdown = (clone $ordersQuery)
+        // Delivery Methods Distribution (Delivered orders only)
+        $deliveryBreakdown = (clone $deliveredOrdersQuery)
             ->selectRaw('delivery_method, count(*) as count')
             ->groupBy('delivery_method')
             ->pluck('count', 'delivery_method')
@@ -114,14 +116,14 @@ class DashboardController extends Controller
         $deliveryNacional = $deliveryBreakdown['envio_nacional'] ?? 0;
         $deliveryPickup = $deliveryBreakdown['pickup'] ?? 0;
 
-        // Gift vs Personal Purchase Distribution
-        $giftOrdersCount = (clone $ordersQuery)->where('is_gift', true)->count();
-        $personalOrdersCount = (clone $ordersQuery)->where('is_gift', false)->count();
+        // Gift vs Personal Purchase Distribution (Delivered orders only)
+        $giftOrdersCount = (clone $deliveredOrdersQuery)->where('is_gift', true)->count();
+        $personalOrdersCount = (clone $deliveredOrdersQuery)->where('is_gift', false)->count();
 
-        // Top 5 Best Selling Products in Period
+        // Top 5 Best Selling Products in Period (Delivered orders only)
         $topProductsQuery = OrderItem::query()
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', '!=', 'Cancelada');
+            ->where('orders.status', 'Entregada');
 
         if ($startDate && $endDate) {
             $topProductsQuery->whereBetween('orders.created_at', [$startDate, $endDate]);
@@ -138,7 +140,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Recent Orders in the Selected Period
+        // Recent Orders in the Selected Period (Exception: Shows all recent orders regardless of status)
         $recentOrders = (clone $ordersQuery)
             ->with('items')
             ->orderBy('id', 'desc')
@@ -176,7 +178,7 @@ class DashboardController extends Controller
      */
     protected function buildSalesTimeline(?Carbon $startDate, ?Carbon $endDate, string $period): array
     {
-        $query = Order::query()->where('status', '!=', 'Cancelada');
+        $query = Order::query()->where('status', 'Entregada');
 
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);

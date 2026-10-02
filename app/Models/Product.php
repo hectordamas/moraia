@@ -22,6 +22,8 @@ class Product extends Model
         'price',
         'compare_at_price',
         'stock_quantity',
+        'options_config',
+        'customizations_config',
         'is_active',
         'is_featured',
         'badge',
@@ -36,6 +38,8 @@ class Product extends Model
             'price' => 'decimal:2',
             'compare_at_price' => 'decimal:2',
             'stock_quantity' => 'integer',
+            'options_config' => 'array',
+            'customizations_config' => 'array',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
         ];

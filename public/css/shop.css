@@ -694,23 +694,229 @@
 
 .variant-pill {
   padding: 0.55rem 1.15rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border-dark, #D8CECA);
+  border-radius: var(--radius-xs, 4px);
   background-color: #FFFFFF;
+  color: var(--color-text, #242020);
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: all 0.15s ease;
+  user-select: none;
 }
 
-.variant-pill:hover {
-  border-color: var(--color-text);
+.variant-pill:hover:not(.out-of-stock):not(.active) {
+  border-color: #242020;
+  background-color: #F5ECE8;
+  color: #242020;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .variant-pill.active {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary-subtle);
-  color: var(--color-primary-dark);
+  border-color: #242020;
+  background-color: #242020;
+  color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(36, 32, 32, 0.2);
+}
+
+.variant-pill.out-of-stock {
+  opacity: 0.5;
+  text-decoration: line-through;
+  background-color: #F8F4F2;
+  border-style: dashed;
+  color: #8C807E;
+  cursor: not-allowed;
+}
+
+/* Dynamic Stock Indicator Badges */
+.product-stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+
+.product-stock-badge.in-stock {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #C8E6C9;
+}
+
+.product-stock-badge.low-stock {
+  background-color: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFE0B2;
+}
+
+.product-stock-badge.out-stock {
+  background-color: #FFEBEE;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+}
+
+/* ==========================================================================
+   PRODUCT CUSTOMIZATIONS & LUXURY ADD-ON CARDS
+   ========================================================================== */
+
+.product-customizations-section {
+  margin-bottom: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.product-custom-group {
+  margin-bottom: 0;
+}
+
+.custom-selection-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-text-muted);
+  background-color: var(--color-surface-soft, #FAF6F4);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs, 4px);
+  border: 1px solid var(--color-border-light, #EDE6E3);
+}
+
+.product-custom-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.65rem;
+}
+
+.product-addon-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #FFFFFF;
+  border: 1.5px solid var(--color-border-dark, #D8CECA);
+  border-radius: var(--radius-xs, 4px);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.product-addon-card input[type="radio"],
+.product-addon-card input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.addon-card-indicator {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: 1.5px solid #C4B9B5;
+  background-color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.addon-card-indicator.radio-indicator {
+  border-radius: 50%;
+}
+
+.addon-card-indicator.checkbox-indicator {
+  border-radius: 3px;
+  color: #FFFFFF;
+}
+
+.addon-card-indicator.checkbox-indicator svg {
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.15s ease;
+}
+
+.addon-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.addon-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #242020;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addon-card-price {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-primary-dark, #82474D);
+  background-color: #FAF2F0;
+  border: 1px solid rgba(216, 127, 134, 0.35);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.addon-card-included {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted, #8C807E);
+  white-space: nowrap;
+}
+
+/* Hover State */
+.product-addon-card:hover {
+  border-color: #242020;
+  background-color: #FAF6F4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.product-addon-card:hover .addon-card-indicator {
+  border-color: #242020;
+}
+
+/* Selected / Checked State */
+.product-addon-card.selected {
+  border-color: #242020;
+  background-color: #F7EFEB;
+  box-shadow: 0 2px 10px rgba(36, 32, 32, 0.1);
+}
+
+.product-addon-card.selected .addon-card-indicator.radio-indicator {
+  border-color: #242020;
+  background-color: #242020;
+  box-shadow: inset 0 0 0 3px #FFFFFF;
+}
+
+.product-addon-card.selected .addon-card-indicator.checkbox-indicator {
+  border-color: #242020;
+  background-color: #242020;
+}
+
+.product-addon-card.selected .addon-card-indicator.checkbox-indicator svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.product-addon-card.selected .addon-card-price {
+  background-color: #242020;
+  border-color: #242020;
+  color: #FFFFFF;
 }
 
 /* Add to Cart Actions */

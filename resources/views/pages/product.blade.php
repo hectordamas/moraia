@@ -119,17 +119,32 @@
 
             <!-- Price & Compare -->
             <div class="product-info-price-wrap">
-                <span class="product-info-price">${{ number_format($product->price, 2) }}</span>
+                <span class="product-info-price" id="display-product-price">${{ number_format($product->price, 2) }}</span>
                 @if($product->compare_at_price && $product->compare_at_price > $product->price)
                     <span class="product-info-price-old">${{ number_format($product->compare_at_price, 2) }}</span>
                     <span class="badge badge-rose" style="font-size: 0.75rem;">Ahorras ${{ number_format($product->compare_at_price - $product->price, 2) }}</span>
                 @endif
+                <span id="product-display-sku" style="font-size: 0.75rem; color: var(--color-text-muted); margin-left: auto; font-family: monospace;">SKU: {{ $product->sku ?: 'MOR' }}</span>
             </div>
 
-            <!-- Stock Status -->
-            <div class="product-info-stock">
-                <span class="product-info-stock-dot"></span>
-                <span>Disponible en stock para entrega inmediata</span>
+            <!-- Dynamic Stock Status Badge -->
+            <div class="product-info-stock" id="product-stock-container" style="margin-bottom: var(--space-4);">
+                @if($product->stock_quantity > 5)
+                    <span class="product-stock-badge in-stock" id="product-stock-badge">
+                        <span class="product-info-stock-dot" style="background-color: #2E7D32;"></span>
+                        <span id="product-stock-text">Disponible en stock ({{ $product->stock_quantity }} unidades)</span>
+                    </span>
+                @elseif($product->stock_quantity > 0)
+                    <span class="product-stock-badge low-stock" id="product-stock-badge">
+                        <span class="product-info-stock-dot" style="background-color: #E65100;"></span>
+                        <span id="product-stock-text">¡Últimas {{ $product->stock_quantity }} unidades disponibles!</span>
+                    </span>
+                @else
+                    <span class="product-stock-badge out-stock" id="product-stock-badge">
+                        <span class="product-info-stock-dot" style="background-color: #C62828;"></span>
+                        <span id="product-stock-text">Agotado temporalmente</span>
+                    </span>
+                @endif
             </div>
 
             <!-- Short Description -->
@@ -139,31 +154,127 @@
                 </div>
             @endif
 
-            <!-- Variants Selector -->
-            @if($product->variants->isNotEmpty())
+            <!-- 1. Dynamic Attribute Combination Selectors (Talla, Color, Tela, etc.) -->
+            @if(!empty($product->options_config) && is_array($product->options_config))
+                <div id="product-attributes-container" style="margin-bottom: var(--space-5);">
+                    @foreach($product->options_config as $aIdx => $attr)
+                        @if(!empty($attr['name']) && !empty($attr['values']))
+                            <div class="variant-group" data-attribute-name="{{ $attr['name'] }}">
+                                <div class="variant-label">
+                                    <span>{{ $attr['name'] }}:</span>
+                                    <strong class="selected-attribute-val" id="selected-attr-label-{{ $aIdx }}">{{ $attr['values'][0] }}</strong>
+                                </div>
+                                <div class="variant-options">
+                                    @foreach($attr['values'] as $vIdx => $val)
+                                        <button type="button" 
+                                                class="variant-pill {{ $vIdx === 0 ? 'active' : '' }}" 
+                                                data-attr-name="{{ $attr['name'] }}"
+                                                data-attr-val="{{ $val }}"
+                                                data-aidx="{{ $aIdx }}">
+                                            {{ $val }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            @elseif($product->variants->isNotEmpty())
+                <!-- Fallback for standard single-axis variants -->
                 @php
                     $groupedVariants = $product->variants->groupBy('variant_type');
                 @endphp
 
-                @foreach($groupedVariants as $type => $vars)
-                    <div class="variant-group">
-                        <div class="variant-label">{{ ucfirst($type) }}:</div>
-                        <div class="variant-options">
-                            @foreach($vars as $vIdx => $v)
-                                <button type="button" 
-                                        class="variant-pill {{ $vIdx === 0 ? 'active' : '' }}" 
-                                        data-variant-id="{{ $v->id }}"
-                                        data-price-mod="{{ $v->price_modifier }}">
-                                    {{ $v->name }}
-                                    @if($v->price_modifier > 0)
-                                        (+${{ number_format($v->price_modifier, 2) }})
-                                    @endif
-                                </button>
-                            @endforeach
+                <div id="product-legacy-variants-container" style="margin-bottom: var(--space-5);">
+                    @foreach($groupedVariants as $type => $vars)
+                        <div class="variant-group">
+                            <div class="variant-label">{{ ucfirst($type) }}:</div>
+                            <div class="variant-options">
+                                @foreach($vars as $vIdx => $v)
+                                    <button type="button" 
+                                            class="variant-pill {{ $vIdx === 0 ? 'active' : '' }} {{ $v->stock_quantity <= 0 ? 'out-of-stock' : '' }}" 
+                                            data-variant-id="{{ $v->id }}"
+                                            data-sku="{{ $v->sku ?: $product->sku }}"
+                                            data-stock="{{ $v->stock_quantity }}"
+                                            data-price-mod="{{ $v->price_modifier }}">
+                                        {{ $v->name }}
+                                        @if($v->price_modifier > 0)
+                                            (+${{ number_format($v->price_modifier, 2) }})
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             @endif
+
+            <!-- 2. Customizations & Add-ons (Single & Multiple Choice) -->
+            @if(!empty($product->customizations_config) && is_array($product->customizations_config))
+                <div class="product-customizations-section">
+                    @foreach($product->customizations_config as $cIdx => $group)
+                        <div class="product-custom-group">
+                            <div class="variant-label" style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                                <span>{{ $group['title'] }}:</span>
+                                <span class="custom-selection-badge">
+                                    {{ ($group['selectionType'] ?? 'single') === 'multiple' ? 'Selección múltiple' : 'Selección única' }}
+                                </span>
+                            </div>
+
+                            <div class="product-custom-cards-grid">
+                                @if(($group['selectionType'] ?? 'single') === 'single')
+                                    <!-- Single Choice (Radio) -->
+                                    @foreach($group['options'] ?? [] as $oIdx => $opt)
+                                        <label class="product-addon-card {{ $oIdx === 0 ? 'selected' : '' }}">
+                                            <input type="radio" 
+                                                   name="custom_group_{{ $cIdx }}" 
+                                                   value="{{ $opt['label'] }}" 
+                                                   data-price="{{ $opt['price'] ?? 0 }}"
+                                                   class="custom-addon-input"
+                                                   {{ $oIdx === 0 ? 'checked' : '' }}>
+                                            <div class="addon-card-indicator radio-indicator"></div>
+                                            <div class="addon-card-content">
+                                                <span class="addon-card-title">{{ $opt['label'] }}</span>
+                                                @if(!empty($opt['price']) && (float)$opt['price'] > 0)
+                                                    <span class="addon-card-price">+${{ number_format((float)$opt['price'], 2) }}</span>
+                                                @else
+                                                    <span class="addon-card-included">Incluido</span>
+                                                @endif
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                @else
+                                    <!-- Multiple Choice (Checkboxes) -->
+                                    @foreach($group['options'] ?? [] as $oIdx => $opt)
+                                        <label class="product-addon-card">
+                                            <input type="checkbox" 
+                                                   name="custom_group_{{ $cIdx }}[]" 
+                                                   value="{{ $opt['label'] }}" 
+                                                   data-price="{{ $opt['price'] ?? 0 }}"
+                                                   class="custom-addon-input">
+                                            <div class="addon-card-indicator checkbox-indicator">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                                </svg>
+                                            </div>
+                                            <div class="addon-card-content">
+                                                <span class="addon-card-title">{{ $opt['label'] }}</span>
+                                                @if(!empty($opt['price']) && (float)$opt['price'] > 0)
+                                                    <span class="addon-card-price">+${{ number_format((float)$opt['price'], 2) }}</span>
+                                                @else
+                                                    <span class="addon-card-included">Opcional</span>
+                                                @endif
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <input type="hidden" id="product-selected-variant-id" value="{{ $product->variants->first()?->id }}">
 
             <!-- Add to Cart Actions -->
             <div class="product-add-actions">
@@ -175,12 +286,13 @@
 
                 <button type="button" 
                         class="btn btn-primary btn-lg product-add-btn" 
+                        id="btn-add-to-cart-main"
                         data-action="add-to-cart" 
                         data-product-id="{{ $product->id }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                     </svg>
-                    Añadir a mi Bolsa
+                    <span id="btn-add-to-cart-text">Añadir a mi Bolsa</span>
                 </button>
             </div>
 
@@ -273,3 +385,268 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productVariants = @json($product->variants ?? []);
+    const optionsConfig = @json($product->options_config ?? []);
+    const basePrice = {{ (float)$product->price }};
+    const baseStock = {{ (int)$product->stock_quantity }};
+    const baseSku = "{{ $product->sku ?: 'MOR' }}";
+
+    const displayPriceEl = document.getElementById('display-product-price');
+    const displaySkuEl = document.getElementById('product-display-sku');
+    const stockBadgeEl = document.getElementById('product-stock-badge');
+    const stockTextEl = document.getElementById('product-stock-text');
+    const selectedVariantInput = document.getElementById('product-selected-variant-id');
+    const addBtn = document.getElementById('btn-add-to-cart-main');
+    const addBtnText = document.getElementById('btn-add-to-cart-text');
+
+    let currentVariantPriceMod = 0;
+
+    function getSelectedOptions() {
+        const selected = {};
+        document.querySelectorAll('#product-attributes-container .variant-group').forEach(group => {
+            const attrName = group.getAttribute('data-attribute-name');
+            const activePill = group.querySelector('.variant-pill.active');
+            if (attrName && activePill) {
+                selected[attrName] = activePill.getAttribute('data-attr-val');
+            }
+        });
+        return selected;
+    }
+
+    function getCustomizationsTotal() {
+        let total = 0;
+        document.querySelectorAll('.custom-addon-input:checked').forEach(inp => {
+            const p = parseFloat(inp.getAttribute('data-price') || inp.dataset.price || 0);
+            total += isNaN(p) ? 0 : p;
+        });
+        return total;
+    }
+
+    function updatePrice() {
+        const customTotal = getCustomizationsTotal();
+        const finalPrice = basePrice + currentVariantPriceMod + customTotal;
+        if (displayPriceEl) {
+            displayPriceEl.textContent = '$' + finalPrice.toFixed(2);
+        }
+    }
+
+    function updateStockBadge(stock, isActive) {
+        if (!stockBadgeEl || !stockTextEl) return;
+
+        stockBadgeEl.className = 'product-stock-badge';
+        const qtyInputEl = document.getElementById('product-qty-input');
+        if (qtyInputEl) {
+            qtyInputEl.setAttribute('data-max-stock', stock);
+            let currentQ = parseInt(qtyInputEl.value, 10) || 1;
+            if (stock <= 0) {
+                qtyInputEl.value = '1';
+            } else if (currentQ > stock) {
+                qtyInputEl.value = stock;
+            }
+        }
+
+        if (!isActive || stock <= 0) {
+            stockBadgeEl.classList.add('out-stock');
+            stockTextEl.textContent = 'Agotado en esta combinación';
+            if (addBtn) {
+                addBtn.disabled = true;
+                addBtn.style.opacity = '0.6';
+                addBtn.style.cursor = 'not-allowed';
+            }
+            if (addBtnText) addBtnText.textContent = 'Agotado';
+        } else if (stock <= 5) {
+            stockBadgeEl.classList.add('low-stock');
+            stockTextEl.textContent = `¡Últimas ${stock} unidades disponibles!`;
+            if (addBtn) {
+                addBtn.disabled = false;
+                addBtn.style.opacity = '1';
+                addBtn.style.cursor = 'pointer';
+            }
+            if (addBtnText) addBtnText.textContent = 'Añadir a mi Bolsa';
+        } else {
+            stockBadgeEl.classList.add('in-stock');
+            stockTextEl.textContent = `Disponible en stock (${stock} unidades)`;
+            if (addBtn) {
+                addBtn.disabled = false;
+                addBtn.style.opacity = '1';
+                addBtn.style.cursor = 'pointer';
+            }
+            if (addBtnText) addBtnText.textContent = 'Añadir a mi Bolsa';
+        }
+    }
+
+    function syncCombinations() {
+        if (productVariants.length === 0) {
+            updateStockBadge(baseStock, baseStock > 0);
+            updatePrice();
+            return;
+        }
+
+        if (optionsConfig.length === 0) {
+            updatePrice();
+            return;
+        }
+
+        const currentSelected = getSelectedOptions();
+
+        // 1. Exact match by options dictionary
+        let matched = productVariants.find(v => {
+            if (!v.options || typeof v.options !== 'object') return false;
+            return Object.entries(currentSelected).every(([k, val]) => v.options[k] === val);
+        });
+
+        // 2. Fallback match by compound name
+        if (!matched) {
+            const comboName = Object.values(currentSelected).join(' / ');
+            matched = productVariants.find(v => v.name === comboName);
+        }
+
+        // 3. Fallback match by individual value or name
+        if (!matched) {
+            const selectedVals = Object.values(currentSelected);
+            matched = productVariants.find(v => {
+                if (v.value && selectedVals.includes(v.value)) return true;
+                if (v.name && selectedVals.includes(v.name)) return true;
+                if (v.name && selectedVals.some(sv => v.name.toLowerCase().includes(sv.toLowerCase()))) return true;
+                return false;
+            });
+        }
+
+        // 4. Default fallback to first active variant
+        if (!matched && productVariants.length > 0) {
+            matched = productVariants.find(v => v.is_active && v.stock_quantity > 0) || productVariants[0];
+        }
+
+        if (matched) {
+            if (selectedVariantInput) selectedVariantInput.value = matched.id;
+            if (displaySkuEl) displaySkuEl.textContent = 'SKU: ' + (matched.sku || baseSku);
+            currentVariantPriceMod = parseFloat(matched.price_modifier || 0);
+            updateStockBadge(matched.stock_quantity, matched.is_active);
+        } else {
+            if (selectedVariantInput) selectedVariantInput.value = '';
+            currentVariantPriceMod = 0;
+            updateStockBadge(baseStock, baseStock > 0);
+        }
+
+        updatePrice();
+    }
+
+    // Bind Attributes Pills
+    const attrPills = document.querySelectorAll('#product-attributes-container .variant-pill');
+    attrPills.forEach(pill => {
+        pill.addEventListener('click', function() {
+            const group = this.closest('.variant-group');
+            if (group) {
+                group.querySelectorAll('.variant-pill').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                const aidx = this.getAttribute('data-aidx');
+                const labelEl = document.getElementById(`selected-attr-label-${aidx}`);
+                if (labelEl) labelEl.textContent = this.getAttribute('data-attr-val');
+            }
+            syncCombinations();
+        });
+    });
+
+    // Bind Legacy Variant Pills
+    const legacyPills = document.querySelectorAll('#product-legacy-variants-container .variant-pill');
+    legacyPills.forEach(pill => {
+        pill.addEventListener('click', function() {
+            const group = this.closest('.variant-group');
+            if (group) {
+                group.querySelectorAll('.variant-pill').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+            }
+            const vId = this.getAttribute('data-variant-id');
+            const sku = this.getAttribute('data-sku');
+            const stock = parseInt(this.getAttribute('data-stock') || '0', 10);
+            const priceMod = parseFloat(this.getAttribute('data-price-mod') || '0');
+
+            if (selectedVariantInput) selectedVariantInput.value = vId;
+            if (displaySkuEl) displaySkuEl.textContent = 'SKU: ' + sku;
+            currentVariantPriceMod = priceMod;
+            updateStockBadge(stock, true);
+            updatePrice();
+        });
+    });
+
+    // Bind Customizations Inputs & Card Selection Sync
+    function syncCustomAddonCards() {
+        document.querySelectorAll('.product-addon-card').forEach(card => {
+            const inp = card.querySelector('.custom-addon-input');
+            if (inp && inp.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    }
+
+    document.querySelectorAll('.custom-addon-input').forEach(inp => {
+        inp.addEventListener('change', function() {
+            syncCustomAddonCards();
+            updatePrice();
+        });
+    });
+
+    syncCustomAddonCards();
+
+    function getSelectedCustomizations() {
+        const list = [];
+        // Capture attribute options (Talla, Copa, etc.)
+        document.querySelectorAll('#product-attributes-container .variant-group').forEach(group => {
+            const attrName = group.getAttribute('data-attribute-name');
+            const activePill = group.querySelector('.variant-pill.active');
+            if (attrName && activePill) {
+                list.push({
+                    group: attrName,
+                    label: activePill.getAttribute('data-attr-val') || activePill.textContent.trim(),
+                    price: 0
+                });
+            }
+        });
+        // Capture custom add-ons
+        document.querySelectorAll('.custom-addon-input:checked').forEach(inp => {
+            const label = inp.value;
+            const price = parseFloat(inp.getAttribute('data-price') || inp.dataset.price || 0);
+            const groupTitle = inp.closest('.product-custom-group')?.querySelector('.variant-label span')?.textContent?.replace(':', '')?.trim() || 'Personalización';
+            list.push({
+                group: groupTitle,
+                label: label,
+                price: isNaN(price) ? 0 : price
+            });
+        });
+        return list;
+    }
+
+    // Direct click listener for Main Add to Cart Button
+    if (addBtn) {
+        addBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const productId = this.getAttribute('data-product-id');
+            const variantId = selectedVariantInput && selectedVariantInput.value ? selectedVariantInput.value : null;
+            const qtyInput = document.getElementById('product-qty-input');
+            const quantity = qtyInput ? parseInt(qtyInput.value, 10) : 1;
+            const customizations = getSelectedCustomizations();
+
+            if (typeof window.addToCartAjax === 'function') {
+                window.addToCartAjax(productId, variantId, quantity, this, customizations);
+            } else if (typeof addToCartAjax === 'function') {
+                addToCartAjax(productId, variantId, quantity, this, customizations);
+            }
+        });
+    }
+
+    // Initial sync
+    if (optionsConfig.length > 0 || productVariants.length > 0) {
+        syncCombinations();
+    } else {
+        updatePrice();
+    }
+});
+</script>
+@endpush

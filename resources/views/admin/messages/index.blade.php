@@ -82,6 +82,11 @@
             <!-- Chat Room Header -->
             <div class="chat-room-header">
                 <div class="chat-room-user">
+                    <a href="{{ route('admin.messages.index', array_filter(['status' => $status, 'q' => $search])) }}" class="chat-mobile-back-btn" aria-label="Volver a lista de mensajes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                        </svg>
+                    </a>
                     <div class="chat-avatar" style="width: 48px; height: 48px; font-size: 1rem;">
                         {{ strtoupper($initialsMain ?: 'C') }}
                     </div>

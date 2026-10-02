@@ -29,6 +29,10 @@ class CartController extends Controller
             'product_id' => 'required|exists:products,id',
             'variant_id' => 'nullable|exists:product_variants,id',
             'quantity' => 'nullable|integer|min:1|max:50',
+            'customizations' => 'nullable|array',
+            'customizations.*.group' => 'nullable|string|max:150',
+            'customizations.*.label' => 'required|string|max:150',
+            'customizations.*.price' => 'nullable|numeric|min:0',
         ]);
 
         $product = Product::with(['images', 'variants'])->findOrFail($request->input('product_id'));
@@ -39,7 +43,7 @@ class CartController extends Controller
                 'success' => false,
                 'requires_variant' => true,
                 'redirect_url' => route('product', $product->slug),
-                'message' => 'Por favor selecciona una talla o color para este producto.',
+                'message' => 'Por favor selecciona las opciones requeridas (talla o color) para este producto.',
             ], 422);
         }
 
@@ -47,11 +51,55 @@ class CartController extends Controller
             ? ProductVariant::where('is_active', true)->find($request->input('variant_id'))
             : null;
 
-        $quantity = (int) ($request->input('quantity', 1));
-        $cartKey = $variant ? "{$product->id}_{$variant->id}" : "{$product->id}_0";
+        // Stock Verification
+        $availableStock = $variant ? (int) $variant->stock_quantity : (int) $product->stock_quantity;
 
-        $price = $product->price + ($variant ? $variant->price_modifier : 0);
+        if ($availableStock <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lo sentimos, este producto o combinación se encuentra actualmente agotado.',
+            ], 422);
+        }
+
+        $quantity = (int) ($request->input('quantity', 1));
+
+        // Process Customizations & Extra Add-on Costs
+        $customizations = $request->input('customizations', []);
+        $customExtra = 0;
+        $customizationLabels = [];
+
+        if (is_array($customizations)) {
+            foreach ($customizations as $c) {
+                $p = ! empty($c['price']) ? (float) $c['price'] : 0;
+                $customExtra += $p;
+                $labelStr = $c['label'];
+                if ($p > 0) {
+                    $labelStr .= ' (+$'.number_format($p, 2).')';
+                }
+                $customizationLabels[] = ! empty($c['group']) ? "{$c['group']}: {$labelStr}" : $labelStr;
+            }
+        }
+
+        $price = (float) $product->price + ($variant ? (float) $variant->price_modifier : 0) + $customExtra;
+
+        // Unique cart key considering variant + customizations
+        $customHash = ! empty($customizations) ? '_'.substr(md5(json_encode($customizations)), 0, 8) : '';
+        $cartKey = $variant ? "{$product->id}_{$variant->id}{$customHash}" : "{$product->id}_0{$customHash}";
         $cart = session()->get('cart', []);
+
+        $currentInCart = isset($cart[$cartKey]) ? (int) $cart[$cartKey]['quantity'] : 0;
+
+        if (($currentInCart + $quantity) > $availableStock) {
+            $remaining = max(0, $availableStock - $currentInCart);
+            $message = $remaining > 0
+                ? "Solo puedes agregar {$remaining} unidad(es) más. Ya tienes {$currentInCart} en tu bolsa (Stock disponible: {$availableStock})."
+                : "Has alcanzado el límite de stock disponible ({$availableStock} unidades) para este producto en tu bolsa.";
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], 422);
+        }
 
         if (isset($cart[$cartKey])) {
             $cart[$cartKey]['quantity'] += $quantity;
@@ -64,7 +112,10 @@ class CartController extends Controller
                 'slug' => $product->slug,
                 'image' => $product->cover_image_url,
                 'price' => (float) $price,
-                'variant_name' => $variant ? "{$variant->variant_type}: {$variant->name}" : null,
+                'variant_name' => $variant ? ($variant->variant_type === 'combinacion' ? $variant->name : "{$variant->variant_type}: {$variant->name}") : null,
+                'customizations' => $customizations,
+                'customization_text' => ! empty($customizationLabels) ? implode(' • ', $customizationLabels) : null,
+                'max_stock' => $availableStock,
                 'quantity' => $quantity,
             ];
         }
@@ -93,13 +144,42 @@ class CartController extends Controller
         $cartKey = $request->input('cart_key');
         $delta = (int) $request->input('delta');
 
-        if (isset($cart[$cartKey])) {
-            $cart[$cartKey]['quantity'] += $delta;
-            if ($cart[$cartKey]['quantity'] <= 0) {
-                unset($cart[$cartKey]);
-            }
-            session()->put('cart', $cart);
+        if (! isset($cart[$cartKey])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Producto no encontrado en el carrito.',
+            ], 404);
         }
+
+        if ($delta > 0) {
+            $item = $cart[$cartKey];
+            $availableStock = 9999;
+
+            if (! empty($item['variant_id'])) {
+                $var = ProductVariant::find($item['variant_id']);
+                if ($var) {
+                    $availableStock = (int) $var->stock_quantity;
+                }
+            } elseif (! empty($item['product_id'])) {
+                $prod = Product::find($item['product_id']);
+                if ($prod) {
+                    $availableStock = (int) $prod->stock_quantity;
+                }
+            }
+
+            if (($item['quantity'] + $delta) > $availableStock) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Stock máximo alcanzado ({$availableStock} unidades disponibles).",
+                ], 422);
+            }
+        }
+
+        $cart[$cartKey]['quantity'] += $delta;
+        if ($cart[$cartKey]['quantity'] <= 0) {
+            unset($cart[$cartKey]);
+        }
+        session()->put('cart', $cart);
 
         $totals = $this->calculateTotals($cart);
 

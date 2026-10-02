@@ -53,7 +53,7 @@
 </div>
 
 <!-- Metric Stat Cards -->
-<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+<div class="stats-grid">
     <!-- Stat 1: Total Revenue -->
     <div class="stat-card">
         <div class="stat-icon-wrap" style="background-color: #F9ECEE; color: var(--color-primary-dark);">
@@ -509,9 +509,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         position: 'bottom',
                         labels: {
                             usePointStyle: true,
-                            boxWidth: 8,
-                            padding: 12,
-                            font: { weight: '600', size: 11 }
+                            boxWidth: 6,
+                            padding: 8,
+                            font: { weight: '600', size: 10 }
                         }
                     },
                     tooltip: {
@@ -561,9 +561,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         position: 'bottom',
                         labels: {
                             usePointStyle: true,
-                            boxWidth: 8,
-                            padding: 10,
-                            font: { weight: '600', size: 11 }
+                            boxWidth: 6,
+                            padding: 8,
+                            font: { weight: '600', size: 10 }
                         }
                     },
                     tooltip: {
@@ -613,9 +613,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         position: 'bottom',
                         labels: {
                             usePointStyle: true,
-                            boxWidth: 8,
-                            padding: 10,
-                            font: { weight: '600', size: 11 }
+                            boxWidth: 6,
+                            padding: 8,
+                            font: { weight: '600', size: 10 }
                         }
                     },
                     tooltip: {

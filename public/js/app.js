@@ -235,7 +235,8 @@ function initMiniCart() {
         const variantId = getSelectedVariantId();
         const qtyInput = document.querySelector('#product-qty-input');
         const quantity = qtyInput ? parseInt(qtyInput.value, 10) : 1;
-        addToCartAjax(productId, variantId, quantity, addBtn);
+        const customizations = getSelectedCustomizations();
+        addToCartAjax(productId, variantId, quantity, addBtn, customizations);
         return;
       }
 
@@ -243,28 +244,36 @@ function initMiniCart() {
       const hasVariants = addBtn.dataset.hasVariants === 'true';
       if (hasVariants) {
         let variantsData = [];
+        let optionsConfigData = [];
+        let customizationsConfigData = [];
         try {
           variantsData = JSON.parse(addBtn.dataset.variants || '[]');
+          optionsConfigData = JSON.parse(addBtn.dataset.optionsConfig || '[]');
+          customizationsConfigData = JSON.parse(addBtn.dataset.customizationsConfig || '[]');
         } catch(err) {
           variantsData = [];
         }
 
-        if (variantsData && variantsData.length > 0) {
+        if ((variantsData && variantsData.length > 0) || (optionsConfigData && optionsConfigData.length > 0) || (customizationsConfigData && customizationsConfigData.length > 0)) {
           window.openQuickVariantModal({
             id: addBtn.dataset.productId,
             name: addBtn.dataset.productName,
             price: addBtn.dataset.productPrice,
+            stock: addBtn.dataset.productStock || 10,
             image: addBtn.dataset.productImage,
             category: addBtn.dataset.productCategory,
-            variants: variantsData
+            slug: addBtn.dataset.productSlug,
+            variants: variantsData,
+            options_config: optionsConfigData,
+            customizations_config: customizationsConfigData
           });
           return;
         }
       }
 
-      // Direct add to cart if no variants
+      // Direct add to cart if no variants or customizations
       const productId = addBtn.dataset.productId;
-      addToCartAjax(productId, null, 1, addBtn);
+      addToCartAjax(productId, null, 1, addBtn, []);
     }
 
     // Update quantity buttons in cart drawer / cart page
@@ -287,9 +296,44 @@ function initMiniCart() {
 }
 
 function getSelectedVariantId() {
+  const hiddenInput = document.querySelector('#product-selected-variant-id');
+  if (hiddenInput && hiddenInput.value) {
+    return hiddenInput.value;
+  }
   const activeVariant = document.querySelector('.variant-pill.active');
   return activeVariant ? activeVariant.dataset.variantId : null;
 }
+
+function getSelectedCustomizations() {
+  const list = [];
+  
+  // Capture attribute pill options (e.g. Copa / Talla)
+  document.querySelectorAll('#product-attributes-container .variant-group').forEach(group => {
+    const attrName = group.getAttribute('data-attribute-name');
+    const activePill = group.querySelector('.variant-pill.active');
+    if (attrName && activePill) {
+      list.push({
+        group: attrName,
+        label: activePill.getAttribute('data-attr-val') || activePill.textContent.trim(),
+        price: 0
+      });
+    }
+  });
+
+  // Capture addon cards / checkboxes / radios
+  document.querySelectorAll('.custom-addon-input:checked').forEach(inp => {
+    const label = inp.value;
+    const price = parseFloat(inp.dataset.price || inp.getAttribute('data-price') || 0);
+    const groupTitle = inp.closest('.product-custom-group')?.querySelector('.variant-label span')?.textContent?.replace(':', '')?.trim() || 'Personalización';
+    list.push({
+      group: groupTitle,
+      label: label,
+      price: isNaN(price) ? 0 : price
+    });
+  });
+  return list;
+}
+window.getSelectedCustomizations = getSelectedCustomizations;
 
 /* ==========================================================================
    Quick Variant Selector Modal Logic
@@ -319,6 +363,7 @@ function initQuickVariantModal() {
     currentBasePrice = parseFloat(productData.price) || 0;
     currentVariants = productData.variants || [];
     selectedVariantsByType = {};
+    let currentMatchedVariant = null;
 
     imgEl.src = productData.image || '';
     imgEl.alt = productData.name || '';
@@ -326,72 +371,241 @@ function initQuickVariantModal() {
     titleEl.textContent = productData.name || '';
     qtyInput.value = '1';
 
-    // Group variants by type
-    const grouped = {};
-    currentVariants.forEach(v => {
-      const type = v.variant_type || 'opción';
-      if (!grouped[type]) grouped[type] = [];
-      grouped[type].push(v);
-    });
-
     variantsContainer.innerHTML = '';
-    const groupTypes = Object.keys(grouped);
+    const optionsConfig = productData.options_config || [];
 
-    // If variants exist, render each group
-    groupTypes.forEach(type => {
-      const groupEl = document.createElement('div');
-      groupEl.className = 'quick-var-group';
+    if (Array.isArray(optionsConfig) && optionsConfig.length > 0) {
+      // 1. Dynamic Combinable Attributes
+      const selectedOptions = {};
 
-      const labelEl = document.createElement('div');
-      labelEl.className = 'quick-var-label';
-      labelEl.innerHTML = `${type.charAt(0).toUpperCase() + type.slice(1)}: <span id="quick-selected-label-${type}"></span>`;
-      groupEl.appendChild(labelEl);
+      optionsConfig.forEach((attr, aIdx) => {
+        if (!attr.name || !attr.values || attr.values.length === 0) return;
 
-      const optionsEl = document.createElement('div');
-      optionsEl.className = 'quick-var-options';
+        const groupEl = document.createElement('div');
+        groupEl.className = 'quick-var-group';
 
-      grouped[type].forEach((v) => {
-        const isOut = v.stock_quantity <= 0;
-        const pill = document.createElement('button');
-        pill.type = 'button';
-        pill.className = `quick-var-pill ${isOut ? 'out-of-stock' : ''}`;
-        pill.dataset.variantId = v.id;
-        pill.dataset.priceMod = v.price_modifier || 0;
-        pill.dataset.stock = v.stock_quantity;
-        pill.dataset.name = v.name;
-        pill.dataset.type = type;
+        const labelEl = document.createElement('div');
+        labelEl.className = 'quick-var-label';
+        labelEl.innerHTML = `${attr.name}: <span id="quick-selected-label-${aIdx}">${attr.values[0]}</span>`;
+        groupEl.appendChild(labelEl);
 
-        let pillText = v.name;
-        if (parseFloat(v.price_modifier) > 0) {
-          pillText += ` (+$${parseFloat(v.price_modifier).toFixed(2)})`;
-        }
-        pill.textContent = pillText;
+        const optionsEl = document.createElement('div');
+        optionsEl.className = 'quick-var-options';
 
-        if (!isOut) {
+        attr.values.forEach((val, vIdx) => {
+          const pill = document.createElement('button');
+          pill.type = 'button';
+          pill.className = `quick-var-pill ${vIdx === 0 ? 'active' : ''}`;
+          pill.textContent = val;
+
           pill.addEventListener('click', () => {
             optionsEl.querySelectorAll('.quick-var-pill').forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
-            selectedVariantsByType[type] = v;
-            const labelSpan = document.getElementById(`quick-selected-label-${type}`);
-            if (labelSpan) labelSpan.textContent = v.name;
-            updateQuickModalPrice();
+            selectedOptions[attr.name] = val;
+            const lbl = document.getElementById(`quick-selected-label-${aIdx}`);
+            if (lbl) lbl.textContent = val;
+            syncQuickCombination();
           });
-        }
 
-        optionsEl.appendChild(pill);
+          optionsEl.appendChild(pill);
+        });
+
+        selectedOptions[attr.name] = attr.values[0];
+        groupEl.appendChild(optionsEl);
+        variantsContainer.appendChild(groupEl);
       });
 
-      groupEl.appendChild(optionsEl);
-      variantsContainer.appendChild(groupEl);
+      function syncQuickCombination() {
+        if (currentVariants.length > 0) {
+          currentMatchedVariant = currentVariants.find(v => {
+            if (!v.options || typeof v.options !== 'object') return false;
+            return Object.entries(selectedOptions).every(([k, val]) => v.options[k] === val);
+          });
 
-      // Select first available pill by default
-      const firstAvailable = optionsEl.querySelector('.quick-var-pill:not(.out-of-stock)');
-      if (firstAvailable) {
-        firstAvailable.click();
+          if (!currentMatchedVariant) {
+            const comboName = Object.values(selectedOptions).join(' / ');
+            currentMatchedVariant = currentVariants.find(v => v.name === comboName);
+          }
+
+          if (!currentMatchedVariant) {
+            const selectedVals = Object.values(selectedOptions);
+            currentMatchedVariant = currentVariants.find(v => {
+              if (v.value && selectedVals.includes(v.value)) return true;
+              if (v.name && selectedVals.includes(v.name)) return true;
+              if (v.name && selectedVals.some(sv => v.name.toLowerCase().includes(sv.toLowerCase()))) return true;
+              return false;
+            });
+          }
+        }
+
+        const stockBadge = document.getElementById('quick-modal-stock-badge');
+        const pMod = currentMatchedVariant ? parseFloat(currentMatchedVariant.price_modifier || 0) : 0;
+        
+        let customExtra = 0;
+        variantsContainer.querySelectorAll('.quick-custom-pill.active').forEach(p => {
+          customExtra += parseFloat(p.dataset.price || 0);
+        });
+
+        if (priceEl) {
+          priceEl.textContent = '$' + (currentBasePrice + pMod + customExtra).toFixed(2);
+        }
+
+        const currentStock = currentMatchedVariant ? parseInt(currentMatchedVariant.stock_quantity || 0, 10) : parseInt(productData.stock || 10, 10);
+
+        if (stockBadge) {
+          if (currentStock <= 0) {
+            stockBadge.textContent = 'Agotado';
+            stockBadge.style.color = '#C62828';
+            if (submitBtn) submitBtn.disabled = true;
+          } else {
+            stockBadge.textContent = `${currentStock} disponibles`;
+            stockBadge.style.color = '#2E7D32';
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        }
       }
-    });
 
-    updateQuickModalPrice();
+      syncQuickCombination();
+    } else {
+      // 2. Legacy Grouped Variants
+      const grouped = {};
+      currentVariants.forEach(v => {
+        const type = v.variant_type || 'opción';
+        if (!grouped[type]) grouped[type] = [];
+        grouped[type].push(v);
+      });
+
+      const groupTypes = Object.keys(grouped);
+      groupTypes.forEach(type => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'quick-var-group';
+
+        const labelEl = document.createElement('div');
+        labelEl.className = 'quick-var-label';
+        labelEl.innerHTML = `${type.charAt(0).toUpperCase() + type.slice(1)}: <span id="quick-selected-label-${type}"></span>`;
+        groupEl.appendChild(labelEl);
+
+        const optionsEl = document.createElement('div');
+        optionsEl.className = 'quick-var-options';
+
+        grouped[type].forEach((v) => {
+          const isOut = v.stock_quantity <= 0;
+          const pill = document.createElement('button');
+          pill.type = 'button';
+          pill.className = `quick-var-pill ${isOut ? 'out-of-stock' : ''}`;
+          pill.dataset.variantId = v.id;
+          pill.dataset.priceMod = v.price_modifier || 0;
+          pill.dataset.stock = v.stock_quantity;
+          pill.dataset.name = v.name;
+          pill.dataset.type = type;
+
+          let pillText = v.name;
+          if (parseFloat(v.price_modifier) > 0) {
+            pillText += ` (+$${parseFloat(v.price_modifier).toFixed(2)})`;
+          }
+          pill.textContent = pillText;
+
+          if (!isOut) {
+            pill.addEventListener('click', () => {
+              optionsEl.querySelectorAll('.quick-var-pill').forEach(p => p.classList.remove('active'));
+              pill.classList.add('active');
+              selectedVariantsByType[type] = v;
+              const labelSpan = document.getElementById(`quick-selected-label-${type}`);
+              if (labelSpan) labelSpan.textContent = v.name;
+              updateQuickModalPrice();
+            });
+          }
+
+          optionsEl.appendChild(pill);
+        });
+
+        groupEl.appendChild(optionsEl);
+        variantsContainer.appendChild(groupEl);
+
+        const firstAvailable = optionsEl.querySelector('.quick-var-pill:not(.out-of-stock)');
+        if (firstAvailable) {
+          firstAvailable.click();
+        }
+      });
+    }
+
+    // 3. Render Customizations / Add-ons in Modal if present
+    const customizationsConfig = productData.customizations_config || [];
+    if (Array.isArray(customizationsConfig) && customizationsConfig.length > 0) {
+      customizationsConfig.forEach((group, cIdx) => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'quick-var-group';
+
+        const labelEl = document.createElement('div');
+        labelEl.className = 'quick-var-label';
+        labelEl.innerHTML = `${group.title}: <span id="quick-custom-label-${cIdx}">${group.selectionType === 'multiple' ? 'Opcional' : (group.options?.[0]?.label || 'Seleccionar')}</span>`;
+        groupEl.appendChild(labelEl);
+
+        const optionsEl = document.createElement('div');
+        optionsEl.className = 'quick-var-options';
+
+        (group.options || []).forEach((opt, oIdx) => {
+          const pill = document.createElement('button');
+          pill.type = 'button';
+          pill.className = `quick-var-pill quick-custom-pill ${oIdx === 0 && group.selectionType === 'single' ? 'active' : ''}`;
+          pill.dataset.group = group.title;
+          pill.dataset.label = opt.label;
+          pill.dataset.price = opt.price || 0;
+          pill.dataset.type = group.selectionType || 'single';
+
+          let text = opt.label;
+          if (parseFloat(opt.price || 0) > 0) {
+            text += ` (+$${parseFloat(opt.price).toFixed(2)})`;
+          }
+          pill.textContent = text;
+
+          pill.addEventListener('click', () => {
+            if (group.selectionType === 'single') {
+              optionsEl.querySelectorAll('.quick-custom-pill').forEach(p => p.classList.remove('active'));
+              pill.classList.add('active');
+              const lbl = document.getElementById(`quick-custom-label-${cIdx}`);
+              if (lbl) lbl.textContent = opt.label;
+            } else {
+              pill.classList.toggle('active');
+            }
+            recalcModalPrice();
+          });
+
+          optionsEl.appendChild(pill);
+        });
+
+        groupEl.appendChild(optionsEl);
+        variantsContainer.appendChild(groupEl);
+      });
+    }
+
+    function recalcModalPrice() {
+      if (Array.isArray(optionsConfig) && optionsConfig.length > 0) {
+        syncQuickCombination();
+        return;
+      }
+      let customExtra = 0;
+      variantsContainer.querySelectorAll('.quick-custom-pill.active').forEach(p => {
+        customExtra += parseFloat(p.dataset.price || 0);
+      });
+
+      let variantExtra = 0;
+      if (currentMatchedVariant) {
+        variantExtra = parseFloat(currentMatchedVariant.price_modifier || 0);
+      } else {
+        Object.values(selectedVariantsByType).forEach(v => {
+          variantExtra += parseFloat(v.price_modifier || 0);
+        });
+      }
+
+      const finalPrice = currentBasePrice + variantExtra + customExtra;
+      if (priceEl) {
+        priceEl.textContent = '$' + finalPrice.toFixed(2);
+      }
+    }
+
+    recalcModalPrice();
+
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
   };
@@ -401,8 +615,11 @@ function initQuickVariantModal() {
     Object.values(selectedVariantsByType).forEach(v => {
       extraPrice += parseFloat(v.price_modifier || 0);
     });
+    variantsContainer.querySelectorAll('.quick-custom-pill.active').forEach(p => {
+      extraPrice += parseFloat(p.dataset.price || 0);
+    });
     const finalPrice = currentBasePrice + extraPrice;
-    priceEl.textContent = '$' + finalPrice.toFixed(2);
+    if (priceEl) priceEl.textContent = '$' + finalPrice.toFixed(2);
   }
 
   window.closeQuickVariantModal = function() {
@@ -425,15 +642,6 @@ function initQuickVariantModal() {
   if (qtyPlus) {
     qtyPlus.addEventListener('click', () => {
       let q = parseInt(qtyInput.value, 10) || 1;
-      const selectedList = Object.values(selectedVariantsByType);
-      let minStock = 9999;
-      selectedList.forEach(v => {
-        if (v.stock_quantity < minStock) minStock = v.stock_quantity;
-      });
-      if (selectedList.length > 0 && q >= minStock) {
-        showToast(`Stock máximo disponible: ${minStock}`, 'info');
-        return;
-      }
       qtyInput.value = q + 1;
     });
   }
@@ -442,22 +650,62 @@ function initQuickVariantModal() {
   if (submitBtn) {
     submitBtn.addEventListener('click', () => {
       if (!currentProductId) return;
-      const selectedList = Object.values(selectedVariantsByType);
-      if (currentVariants.length > 0 && selectedList.length === 0) {
-        showToast('Por favor selecciona las opciones requeridas', 'info');
-        return;
+
+      const optionsConfig = variantsContainer.querySelectorAll('.quick-var-group');
+      let targetVariantId = null;
+
+      if (optionsConfig.length > 0 && Array.isArray(currentVariants) && currentVariants.length > 0) {
+        const selectedList = Object.values(selectedVariantsByType);
+        if (selectedList.length > 0) {
+          targetVariantId = selectedList[0].id;
+        } else {
+          // Combination match
+          const activePills = variantsContainer.querySelectorAll('.quick-var-pill:not(.quick-custom-pill).active');
+          if (activePills.length > 0) {
+            const selectedVals = Array.from(activePills).map(p => p.textContent.trim());
+            const matched = currentVariants.find(v => {
+              if (v.options && typeof v.options === 'object') {
+                return Object.values(v.options).every(val => selectedVals.includes(val));
+              }
+              return false;
+            }) || currentVariants[0];
+            targetVariantId = matched ? matched.id : null;
+          }
+        }
       }
 
-      const qty = parseInt(qtyInput.value, 10) || 1;
-      const primaryVariantId = selectedList[0] ? selectedList[0].id : null;
+      // Collect selected customizations & options in modal
+      const modalCustomizations = [];
+      variantsContainer.querySelectorAll('.quick-var-group').forEach(grp => {
+        const activeOptionPill = grp.querySelector('.quick-var-pill:not(.quick-custom-pill).active');
+        const activeCustomPill = grp.querySelector('.quick-custom-pill.active');
+        const grpLabel = grp.querySelector('.quick-var-label')?.textContent?.split(':')[0]?.trim();
 
+        if (activeOptionPill && !targetVariantId && grpLabel) {
+          modalCustomizations.push({
+            group: grpLabel,
+            label: activeOptionPill.textContent.trim(),
+            price: 0
+          });
+        }
+      });
+
+      variantsContainer.querySelectorAll('.quick-custom-pill.active').forEach(p => {
+        modalCustomizations.push({
+          group: p.dataset.group,
+          label: p.dataset.label,
+          price: parseFloat(p.dataset.price || 0)
+        });
+      });
+
+      const qty = parseInt(qtyInput.value, 10) || 1;
       window.closeQuickVariantModal();
-      addToCartAjax(currentProductId, primaryVariantId, qty, null);
+      addToCartAjax(currentProductId, targetVariantId, qty, null, modalCustomizations);
     });
   }
 }
 
-function addToCartAjax(productId, variantId, quantity, buttonEl) {
+function addToCartAjax(productId, variantId, quantity, buttonEl, customizations = []) {
   const originalHtml = buttonEl ? buttonEl.innerHTML : '';
   if (buttonEl) {
     buttonEl.disabled = true;
@@ -473,7 +721,8 @@ function addToCartAjax(productId, variantId, quantity, buttonEl) {
     body: JSON.stringify({
       product_id: productId,
       variant_id: variantId,
-      quantity: quantity
+      quantity: quantity,
+      customizations: customizations
     })
   })
   .then(async (res) => {
@@ -502,6 +751,7 @@ function addToCartAjax(productId, variantId, quantity, buttonEl) {
     }
   });
 }
+window.addToCartAjax = addToCartAjax;
 
 function updateCartQty(cartKey, delta) {
   fetch('/cart/update', {
@@ -818,6 +1068,11 @@ function initProductDetail() {
 
     qtyPlus.addEventListener('click', () => {
       let val = parseInt(qtyInput.value, 10) || 1;
+      const maxStock = parseInt(qtyInput.getAttribute('data-max-stock') || '9999', 10);
+      if (val >= maxStock) {
+        showToast(`Stock máximo disponible: ${maxStock} unidades`, 'info');
+        return;
+      }
       qtyInput.value = val + 1;
     });
   }

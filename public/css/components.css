@@ -408,12 +408,22 @@
 .quick-var-label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #242020;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .quick-var-label span {
-  font-weight: 500;
-  color: var(--color-primary-dark);
+  font-weight: 700;
+  color: var(--color-text);
+  background-color: var(--color-surface-soft);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border-dark);
 }
 
 .quick-var-options {
@@ -424,32 +434,38 @@
 
 .quick-var-pill {
   background-color: #FFFFFF;
-  border: 1.5px solid var(--color-border);
+  border: 1.5px solid var(--color-border-dark);
   color: var(--color-text);
-  padding: 0.45rem 0.85rem;
+  padding: 0.5rem 0.95rem;
   border-radius: var(--radius-xs);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
 }
 
-.quick-var-pill:hover:not(.out-of-stock) {
-  border-color: var(--color-primary);
-  background-color: #FAF5F2;
+.quick-var-pill:hover:not(.out-of-stock):not(.active) {
+  border-color: #242020;
+  background-color: #F5ECE8;
+  color: #242020;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .quick-var-pill.active {
-  border-color: var(--color-primary-dark);
+  border-color: #242020;
   background-color: #242020;
   color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(36, 32, 32, 0.2);
 }
 
 .quick-var-pill.out-of-stock {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
   text-decoration: line-through;
+  background-color: #F8F4F2;
+  border-style: dashed;
+  color: #8C807E;
 }
 
 .quick-modal-actions {

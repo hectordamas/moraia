@@ -21,11 +21,16 @@
 <body>
     <div class="admin-layout">
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" id="adminSidebar">
             <div class="admin-sidebar-brand">
                 <a href="{{ route('admin.dashboard') }}" style="display: flex; justify-content: center; align-items: center; width: 100%;">
                     <img src="{{ asset('images/branding/logo_moraia_navbar_oscuro.png') }}" alt="MORAIA">
                 </a>
+                <button type="button" class="admin-sidebar-close" id="adminSidebarClose" aria-label="Cerrar Menú">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
             <nav class="admin-nav">
@@ -101,13 +106,24 @@
             </div>
         </aside>
 
+        <!-- Mobile Sidebar Backdrop Overlay -->
+        <div class="admin-sidebar-backdrop" id="adminSidebarBackdrop" aria-hidden="true"></div>
+
         <!-- Main Content Area -->
         <div class="admin-main">
             <!-- Topbar -->
             <header class="admin-topbar">
-                <h1 class="admin-topbar-title">@yield('page_title', 'Administración')</h1>
-                <div class="flex items-center gap-4">
-                    <span style="font-size: var(--text-sm); color: var(--color-text-light);">
+                <div class="admin-topbar-left">
+                    <button type="button" class="admin-menu-toggle" id="adminMenuToggle" aria-label="Abrir Menú de Navegación" aria-expanded="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                    </button>
+                    <h1 class="admin-topbar-title">@yield('page_title', 'Administración')</h1>
+                </div>
+
+                <div class="admin-topbar-right">
+                    <span class="admin-user-greeting">
                         Hola, <strong>{{ Auth::user()->name ?? 'Administrador' }}</strong>
                     </span>
                 </div>
@@ -131,6 +147,67 @@
             </main>
         </div>
     </div>
+
+    <!-- Admin Responsive Mobile Drawer Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('adminSidebar');
+            const toggleBtn = document.getElementById('adminMenuToggle');
+            const closeBtn = document.getElementById('adminSidebarClose');
+            const backdrop = document.getElementById('adminSidebarBackdrop');
+
+            function openSidebar() {
+                if (!sidebar) return;
+                sidebar.classList.add('open');
+                if (backdrop) backdrop.classList.add('open');
+                document.body.classList.add('admin-sidebar-open');
+                if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+            }
+
+            function closeSidebar() {
+                if (!sidebar) return;
+                sidebar.classList.remove('open');
+                if (backdrop) backdrop.classList.remove('open');
+                document.body.classList.remove('admin-sidebar-open');
+                if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (sidebar && sidebar.classList.contains('open')) {
+                        closeSidebar();
+                    } else {
+                        openSidebar();
+                    }
+                });
+            }
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeSidebar();
+                });
+            }
+
+            if (backdrop) {
+                backdrop.addEventListener('click', closeSidebar);
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar && sidebar.classList.contains('open')) {
+                    closeSidebar();
+                }
+            });
+
+            // Auto close mobile sidebar when navigating or resizing to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 1024 && sidebar && sidebar.classList.contains('open')) {
+                    closeSidebar();
+                }
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 </html>

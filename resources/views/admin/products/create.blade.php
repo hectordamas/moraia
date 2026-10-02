@@ -27,9 +27,9 @@
 
     <form id="productForm" action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
-        <div class="grid" style="grid-template-columns: 2fr 1.2fr; gap: var(--space-8); align-items: start;">
+        <div class="product-form-layout">
             <!-- Main Details -->
-            <div>
+            <div class="product-form-main">
                 <div class="form-group">
                     <label class="form-label" for="name">Nombre del Producto *</label>
                     <input type="text" id="name" name="name" class="form-input" value="{{ old('name') }}" placeholder="Ej: Mini Box Dulce Consentirte" required>
@@ -85,69 +85,160 @@
                     <textarea id="description" name="description" class="form-textarea" rows="4" placeholder="Detalles de confección, materiales, presentación para regalo...">{{ old('description') }}</textarea>
                 </div>
 
-                <!-- Product Variants Manager (Tallas & Colores) -->
+                <!-- Dynamic Product Variants & Options Manager -->
                 <div class="variants-panel">
                     <div class="variants-header">
                         <div class="variants-title-wrap">
                             <h3>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="color: var(--color-primary-dark);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="color: var(--color-primary-dark);">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
                                 </svg>
-                                Variantes del Producto (Tallas & Colores)
+                                Variantes Dinámicas & Control de Stock
                             </h3>
-                            <p>Configura las opciones elegibles por el cliente en la página del producto.</p>
-                        </div>
-                        <div class="variant-actions-bar">
-                            <button type="button" id="btnAddSize" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.65rem;">
-                                + Agregar Talla
-                            </button>
-                            <button type="button" id="btnAddColor" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.65rem;">
-                                + Agregar Color
-                            </button>
-                            <button type="button" id="btnAddCustom" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.65rem;">
-                                + Opción Personalizada
-                            </button>
+                            <p>Define atributos personalizados (Tallas, Colores, Telas, etc.) y gestiona el stock específico de cada combinación.</p>
                         </div>
                     </div>
 
-                    <!-- Quick Preset Chips -->
-                    <div class="variant-preset-box">
-                        <span class="variant-preset-label">Atajos Rápidos:</span>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('talla', 'Talla S', 'S')">+ Talla S</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('talla', 'Talla M', 'M')">+ Talla M</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('talla', 'Talla L', 'L')">+ Talla L</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('talla', 'Talla 32B', '32B')">+ Talla 32B</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('talla', 'Talla 34B', '34B')">+ Talla 34B</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('talla', 'Talla 36B', '36B')">+ Talla 36B</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('talla', 'Talla Única', 'Única')">+ Talla Única</button>
-                        <span style="color: var(--color-border); margin: 0 4px;">|</span>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('color', 'Rosa Mauve', '#D87F86')">🌸 Rosa Mauve</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('color', 'Negro Noche', '#242020')">🖤 Negro Noche</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('color', 'Blanco Seda', '#FAF5F2')">🤍 Blanco Seda</button>
-                        <button type="button" class="variant-chip-btn" onclick="addPresetVariant('color', 'Vino Tinto', '#7A2028')">🍷 Vino Tinto</button>
+                    <!-- Mode Tabs -->
+                    <div class="variant-mode-tabs">
+                        <button type="button" class="variant-mode-tab active" data-tab="matrixTab">
+                            ✨ Atributos & Matriz Combinada
+                        </button>
+                        <button type="button" class="variant-mode-tab" data-tab="customizationsTab">
+                            🎁 Personalizaciones & Add-ons (Opcional)
+                        </button>
                     </div>
 
-                    <!-- Variants Table Container -->
-                    <div class="variants-table-wrap">
-                        <table class="variants-table" id="variantsTable">
-                            <thead>
-                                <tr>
-                                    <th style="width: 130px;">Tipo</th>
-                                    <th>Nombre de la Opción *</th>
-                                    <th style="width: 120px;">Valor / Detalle</th>
-                                    <th style="width: 120px;">+ Precio ($ USD)</th>
-                                    <th style="width: 100px;">Stock</th>
-                                    <th style="width: 80px; text-align: center;">Activa</th>
-                                    <th style="width: 50px; text-align: center;">Quitar</th>
-                                </tr>
-                            </thead>
-                            <tbody id="variantsTableBody">
-                                <!-- Dynamic rows -->
-                            </tbody>
-                        </table>
-                        <div id="noVariantsNotice" class="variants-empty-notice">
-                            Este producto no tiene variantes asignadas todavía. Usa los botones superiores o atajos para agregar tallas o colores.
+                    <!-- Hidden config inputs -->
+                    <input type="hidden" name="options_config" id="optionsConfigInput" value="">
+                    <input type="hidden" name="customizations_config" id="customizationsConfigInput" value="">
+
+                    <!-- TAB 1: Attributes & Matrix Generator -->
+                    <div id="matrixTab" class="variant-tab-content">
+                        <!-- Attributes Builder Card -->
+                        <div class="attributes-builder-box">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text); text-transform: uppercase;">
+                                    1. Atributos del Producto (ej. Talla, Color, Tipo de Tela)
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" id="btnAddAttribute" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.75rem;">
+                                        + Agregar Otro Atributo
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Preset Templates -->
+                            <div class="variant-preset-box">
+                                <span class="variant-preset-label">Plantillas Rápidas:</span>
+                                <button type="button" class="variant-chip-btn" onclick="applyAttributeTemplate('ropa')">+ Ropa (Tallas S, M, L)</button>
+                                <button type="button" class="variant-chip-btn" onclick="applyAttributeTemplate('lenceria')">+ Lencería (Copas 32B, 34B, 36B)</button>
+                                <button type="button" class="variant-chip-btn" onclick="applyAttributeTemplate('colores')">+ Colores Populares</button>
+                                <button type="button" class="variant-chip-btn" onclick="applyAttributeTemplate('telas')">+ Tipos de Tela</button>
+                            </div>
+
+                            <!-- Attributes List Container -->
+                            <div id="attributesContainer" class="attributes-list">
+                                <!-- Dynamic attribute rows inserted via JS -->
+                            </div>
+
+                            <!-- Generator Action Banner -->
+                            <div class="matrix-generator-banner">
+                                <div class="matrix-generator-info">
+                                    <span id="matrixCombinationsCount">0 atributos definidos</span>
+                                    <div style="font-size: 0.7rem; color: var(--color-text-muted);">
+                                        Genera la lista completa con stock individual por combinación (ej: Talla S / Rojo = 15 uds).
+                                    </div>
+                                </div>
+                                <button type="button" id="btnGenerateMatrix" class="btn btn-primary btn-sm" style="font-weight: 700; padding: 0.45rem 1rem;">
+                                    ⚡ Generar Matriz de Combinaciones
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. Stock Matrix Table -->
+                        <div style="margin-top: 1.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text); text-transform: uppercase;">
+                                    2. Matriz de Variantes & Stock Individual
+                                </span>
+                                <button type="button" id="btnAddManualRow" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.65rem;">
+                                    + Agregar Fila Manual
+                                </button>
+                            </div>
+
+                            <!-- Bulk Toolbar -->
+                            <div class="matrix-bulk-toolbar">
+                                <div class="matrix-bulk-actions">
+                                    <span style="font-weight: 600; color: var(--color-text-muted);">Asignar en lote:</span>
+                                    <span>Stock:</span>
+                                    <input type="number" id="bulkStockInput" class="form-input matrix-bulk-input" placeholder="15" value="15" min="0">
+                                    <button type="button" id="btnApplyBulkStock" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                                        Aplicar Stock
+                                    </button>
+
+                                    <span style="margin-left: 6px;">+ Precio ($):</span>
+                                    <input type="number" step="0.01" id="bulkPriceInput" class="form-input matrix-bulk-input" placeholder="0.00" value="0.00">
+                                    <button type="button" id="btnApplyBulkPrice" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                                        Aplicar Precio
+                                    </button>
+                                </div>
+                                <div>
+                                    <button type="button" id="btnClearMatrix" class="btn btn-outline btn-sm" style="font-size: 0.7rem; padding: 0.25rem 0.5rem; color: #C05C5C;">
+                                        Limpiar Matriz
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Matrix Table Container -->
+                            <div class="variants-table-wrap">
+                                <table class="variants-table" id="matrixVariantsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Combinación / Atributos</th>
+                                            <th style="width: 130px;">SKU Específico</th>
+                                            <th style="width: 120px;">+ Precio ($ USD)</th>
+                                            <th style="width: 110px;">Stock Individual *</th>
+                                            <th style="width: 70px; text-align: center;">Activa</th>
+                                            <th style="width: 50px; text-align: center;">Quitar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="matrixTableBody">
+                                        <!-- Matrix rows generated dynamically -->
+                                    </tbody>
+                                </table>
+                                <div id="noMatrixNotice" class="variants-empty-notice">
+                                    Aún no has generado la matriz de combinaciones. Agrega atributos arriba y haz clic en <strong>"⚡ Generar Matriz de Combinaciones"</strong>.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Customizations & Add-ons (Single or Multiple Choice) -->
+                    <div id="customizationsTab" class="variant-tab-content" style="display: none;">
+                        <div class="attributes-builder-box">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <div>
+                                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text); text-transform: uppercase;">
+                                        Opciones Adicionales y Personalizaciones
+                                    </span>
+                                    <p style="font-size: 0.72rem; color: var(--color-text-muted); margin: 2px 0 0 0;">
+                                        Permite al cliente elegir personalizaciones como dedicatorias, envolturas o complementos con costo adicional.
+                                    </p>
+                                </div>
+                                <button type="button" id="btnAddCustomizationGroup" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.75rem;">
+                                    + Agregar Grupo de Personalización
+                                </button>
+                            </div>
+
+                            <div id="customizationsContainer">
+                                <!-- Dynamic customization cards inserted via JS -->
+                            </div>
+
+                            <div id="noCustomizationsNotice" class="variants-empty-notice">
+                                No hay opciones de personalización configuradas. Haz clic en <strong>"+ Agregar Grupo de Personalización"</strong> si deseas ofrecer opciones de selección única (dropdown) o selección múltiple (checkboxes).
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -169,7 +260,7 @@
             </div>
 
             <!-- Sidebar Controls & Dropzone Gallery -->
-            <div>
+            <div class="product-form-sidebar">
                 <!-- Interactive Dropzone -->
                 <div style="background-color: #FFFFFF; padding: var(--space-5); border-radius: var(--radius-sm); border: 1px solid var(--color-border); margin-bottom: var(--space-6);">
                     <h3 style="font-size: var(--text-sm); font-weight: 700; text-transform: uppercase; color: var(--color-text); margin-bottom: var(--space-3); display: flex; align-items: center; justify-content: space-between;">
@@ -217,7 +308,7 @@
                     </h3>
 
                     <div class="form-group">
-                        <label class="form-label" for="sku">Código SKU</label>
+                        <label class="form-label" for="sku">Código SKU Base</label>
                         <input type="text" id="sku" name="sku" class="form-input" placeholder="Ej: REG-MIN-02" value="{{ old('sku') }}">
                     </div>
 
@@ -246,6 +337,27 @@
                 </button>
             </div>
         </div>
+
+        <!-- Floating / Sticky Actions Bar (Always visible while scrolling) -->
+        <div class="admin-sticky-actions">
+            <div class="admin-sticky-actions-info">
+                <span class="admin-sticky-actions-title">Nuevo Producto</span>
+                <span class="admin-sticky-actions-badge">Borrador</span>
+            </div>
+            <div class="admin-sticky-actions-btns">
+                <a href="{{ route('admin.products.index') }}" class="btn-cancel-floating">
+                    &larr; Volver al Listado
+                </a>
+                <button type="submit" class="btn-save-floating">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    <span>Guardar Producto</span>
+                </button>
+            </div>
+        </div>
+
+        <div style="height: 65px;"></div>
     </form>
 </div>
 @endsection
@@ -254,69 +366,494 @@
 <!-- SortableJS CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
-let variantRowIndex = 0;
-
-function addVariantRow(type = 'talla', name = '', value = '', priceMod = '0.00', stock = '10', isActive = true) {
-    const tbody = document.getElementById('variantsTableBody');
-    const notice = document.getElementById('noVariantsNotice');
-    const idx = variantRowIndex++;
-
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>
-            <select name="variants[${idx}][variant_type]" class="form-select">
-                <option value="talla" ${type === 'talla' ? 'selected' : ''}>Talla</option>
-                <option value="color" ${type === 'color' ? 'selected' : ''}>Color</option>
-                <option value="presentacion" ${type === 'presentacion' ? 'selected' : ''}>Presentación</option>
-                <option value="personalizado" ${type === 'personalizado' ? 'selected' : ''}>Personalizado</option>
-            </select>
-        </td>
-        <td>
-            <input type="text" name="variants[${idx}][name]" class="form-input" value="${name}" placeholder="Ej: Talla S o Rosa Mauve" required>
-        </td>
-        <td>
-            <input type="text" name="variants[${idx}][value]" class="form-input" value="${value}" placeholder="Ej: S o #D87F86">
-        </td>
-        <td>
-            <input type="number" step="0.01" min="0" name="variants[${idx}][price_modifier]" class="form-input" value="${priceMod}" placeholder="0.00">
-        </td>
-        <td>
-            <input type="number" min="0" name="variants[${idx}][stock_quantity]" class="form-input" value="${stock}" placeholder="10">
-        </td>
-        <td style="text-align: center;">
-            <input type="hidden" name="variants[${idx}][is_active]" value="0">
-            <input type="checkbox" name="variants[${idx}][is_active]" value="1" ${isActive ? 'checked' : ''}>
-        </td>
-        <td style="text-align: center;">
-            <button type="button" class="btn-remove-variant-row" onclick="removeVariantRow(this)" title="Eliminar fila">✕</button>
-        </td>
-    `;
-
-    tbody.appendChild(row);
-    if (notice) notice.style.display = 'none';
-}
-
-function removeVariantRow(btn) {
-    const row = btn.closest('tr');
-    const tbody = document.getElementById('variantsTableBody');
-    const notice = document.getElementById('noVariantsNotice');
-    row.remove();
-    if (tbody.children.length === 0 && notice) {
-        notice.style.display = 'block';
-    }
-}
-
-function addPresetVariant(type, name, val) {
-    addVariantRow(type, name, val, '0.00', '10', true);
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Attach buttons for variant addition
-    document.getElementById('btnAddSize')?.addEventListener('click', () => addVariantRow('talla', 'Talla ', '', '0.00', '10', true));
-    document.getElementById('btnAddColor')?.addEventListener('click', () => addVariantRow('color', 'Color ', '', '0.00', '10', true));
-    document.getElementById('btnAddCustom')?.addEventListener('click', () => addVariantRow('personalizado', '', '', '0.00', '10', true));
+    // ------------------------------------------------------------------------
+    // 1. TAB NAVIGATION (Matrix vs Customizations)
+    // ------------------------------------------------------------------------
+    const tabButtons = document.querySelectorAll('.variant-mode-tab');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            tabButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const targetId = this.getAttribute('data-tab');
+            document.querySelectorAll('.variant-tab-content').forEach(c => c.style.display = 'none');
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) targetEl.style.display = 'block';
+        });
+    });
 
-    // Dropzone & Sortable functionality
+    // ------------------------------------------------------------------------
+    // 2. DYNAMIC ATTRIBUTES BUILDER STATE & LOGIC
+    // ------------------------------------------------------------------------
+    let attributes = [];
+    let attrIdCounter = 1;
+    let matrixRowIndex = 0;
+
+    const attributesContainer = document.getElementById('attributesContainer');
+    const optionsConfigInput = document.getElementById('optionsConfigInput');
+    const matrixCountEl = document.getElementById('matrixCombinationsCount');
+    const matrixTbody = document.getElementById('matrixTableBody');
+    const noMatrixNotice = document.getElementById('noMatrixNotice');
+
+    function renderAttributes() {
+        attributesContainer.innerHTML = '';
+        if (attributes.length === 0) {
+            attributesContainer.innerHTML = `
+                <div style="text-align: center; padding: 1.5rem; color: var(--color-text-muted); font-size: 0.75rem; background: #FAF6F4; border-radius: var(--radius-xs); border: 1px dashed var(--color-border);">
+                    No hay atributos definidos. Usa los botones superiores o plantillas para comenzar (ej: Talla, Color).
+                </div>
+            `;
+        }
+
+        attributes.forEach((attr, aIdx) => {
+            const card = document.createElement('div');
+            card.className = 'attribute-row-card';
+            card.innerHTML = `
+                <div>
+                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; display: block; margin-bottom: 3px;">Nombre del Atributo</label>
+                    <input type="text" class="form-input attr-name-input" value="${escapeHtml(attr.name)}" placeholder="Ej: Talla, Color, Tela..." style="font-size: 0.8rem; font-weight: 700;">
+                </div>
+                <div>
+                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; display: block; margin-bottom: 3px;">Valores / Opciones (Escribe y presiona Enter)</label>
+                    <div class="attribute-values-chips-wrap" data-attr-id="${attr.id}">
+                        ${attr.values.map((v, vIdx) => `
+                            <span class="attr-value-chip">
+                                ${escapeHtml(v)}
+                                <span class="chip-del" data-attr-id="${attr.id}" data-val-idx="${vIdx}" title="Eliminar">&times;</span>
+                            </span>
+                        `).join('')}
+                        <input type="text" class="attr-value-input" placeholder="+ Agregar valor..." data-attr-id="${attr.id}">
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <button type="button" class="btn-remove-variant-row" data-remove-attr="${attr.id}" title="Eliminar atributo">✕</button>
+                </div>
+            `;
+
+            // Bind Name Input
+            card.querySelector('.attr-name-input').addEventListener('input', function() {
+                attr.name = this.value;
+                updateCombinationsCount();
+                syncOptionsConfig();
+            });
+
+            // Bind Chip Delete
+            card.querySelectorAll('.chip-del').forEach(delBtn => {
+                delBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const aId = parseInt(this.getAttribute('data-attr-id'));
+                    const vIdx = parseInt(this.getAttribute('data-val-idx'));
+                    const targetAttr = attributes.find(a => a.id === aId);
+                    if (targetAttr) {
+                        targetAttr.values.splice(vIdx, 1);
+                        renderAttributes();
+                        updateCombinationsCount();
+                        syncOptionsConfig();
+                    }
+                });
+            });
+
+            // Bind Value Chip Input (Enter key or comma or blur)
+            const valueInput = card.querySelector('.attr-value-input');
+            valueInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    addValueToAttr(attr.id, this.value);
+                    this.value = '';
+                }
+            });
+
+            // Bind Delete Attribute
+            card.querySelector('[data-remove-attr]').addEventListener('click', function() {
+                attributes = attributes.filter(a => a.id !== attr.id);
+                renderAttributes();
+                updateCombinationsCount();
+                syncOptionsConfig();
+            });
+
+            attributesContainer.appendChild(card);
+        });
+
+        updateCombinationsCount();
+        syncOptionsConfig();
+    }
+
+    function addValueToAttr(attrId, value) {
+        const valClean = value.trim().replace(/^,|,$/g, '');
+        if (!valClean) return;
+        const attr = attributes.find(a => a.id === attrId);
+        if (attr && !attr.values.includes(valClean)) {
+            attr.values.push(valClean);
+            renderAttributes();
+            // Re-focus input
+            setTimeout(() => {
+                const el = document.querySelector(`.attribute-values-chips-wrap[data-attr-id="${attrId}"] .attr-value-input`);
+                if (el) el.focus();
+            }, 50);
+        }
+    }
+
+    function addAttribute(name = 'Nuevo Atributo', values = []) {
+        attributes.push({
+            id: attrIdCounter++,
+            name: name,
+            values: values
+        });
+        renderAttributes();
+    }
+
+    window.applyAttributeTemplate = function(templateType) {
+        if (templateType === 'ropa') {
+            const existing = attributes.find(a => a.name.toLowerCase().includes('talla'));
+            if (existing) existing.values = Array.from(new Set([...existing.values, 'S', 'M', 'L', 'XL']));
+            else addAttribute('Talla', ['S', 'M', 'L', 'XL']);
+        } else if (templateType === 'lenceria') {
+            const existing = attributes.find(a => a.name.toLowerCase().includes('talla') || a.name.toLowerCase().includes('copa'));
+            if (existing) existing.values = Array.from(new Set([...existing.values, '32B', '34B', '36B', '38B']));
+            else addAttribute('Talla de Copa', ['32B', '34B', '36B', '38B']);
+        } else if (templateType === 'colores') {
+            const existing = attributes.find(a => a.name.toLowerCase().includes('color'));
+            if (existing) existing.values = Array.from(new Set([...existing.values, 'Rosa Mauve', 'Negro Noche', 'Blanco Seda', 'Vino Tinto']));
+            else addAttribute('Color', ['Rosa Mauve', 'Negro Noche', 'Blanco Seda', 'Vino Tinto']);
+        } else if (templateType === 'telas') {
+            const existing = attributes.find(a => a.name.toLowerCase().includes('tela'));
+            if (existing) existing.values = Array.from(new Set([...existing.values, 'Seda Satén', 'Algodón Pima', 'Encaje Francés']));
+            else addAttribute('Tipo de Tela', ['Seda Satén', 'Algodón Pima', 'Encaje Francés']);
+        }
+    };
+
+    function updateCombinationsCount() {
+        const validAttrs = attributes.filter(a => a.name.trim() !== '' && a.values.length > 0);
+        if (validAttrs.length === 0) {
+            matrixCountEl.innerHTML = '0 atributos configurados';
+            return;
+        }
+        const total = validAttrs.reduce((acc, curr) => acc * curr.values.length, 1);
+        matrixCountEl.innerHTML = `<strong>${validAttrs.length} atributos</strong> (${validAttrs.map(a => a.name).join(', ')}) &bull; <strong>${total} combinaciones posibles</strong>`;
+    }
+
+    function syncOptionsConfig() {
+        const validAttrs = attributes
+            .filter(a => a.name.trim() !== '' && a.values.length > 0)
+            .map(a => ({ name: a.name.trim(), values: a.values }));
+        optionsConfigInput.value = validAttrs.length > 0 ? JSON.stringify(validAttrs) : '';
+    }
+
+    document.getElementById('btnAddAttribute')?.addEventListener('click', () => {
+        addAttribute('Nueva Opción', []);
+    });
+
+    // ------------------------------------------------------------------------
+    // 3. CARTESIAN PRODUCT & COMBINATION MATRIX GENERATOR
+    // ------------------------------------------------------------------------
+    function cartesianProduct(arr) {
+        return arr.reduce((a, b) => {
+            return a.flatMap(d => b.map(e => [d, e].flat()));
+        });
+    }
+
+    function generateMatrixCombinations() {
+        const validAttrs = attributes.filter(a => a.name.trim() !== '' && a.values.length > 0);
+        if (validAttrs.length === 0) {
+            alert('Por favor agrega al menos un atributo con valores (ej: Talla con S, M, L) antes de generar la matriz.');
+            return;
+        }
+
+        // Gather existing rows to preserve stocks or custom prices if names match
+        const existingRowMap = {};
+        matrixTbody.querySelectorAll('tr').forEach(tr => {
+            const comboKey = tr.getAttribute('data-combo-key');
+            if (comboKey) {
+                existingRowMap[comboKey] = {
+                    stock: tr.querySelector('.matrix-stock-input')?.value || '15',
+                    price: tr.querySelector('.matrix-price-input')?.value || '0.00',
+                    sku: tr.querySelector('.matrix-sku-input')?.value || '',
+                    active: tr.querySelector('.matrix-active-check')?.checked ?? true
+                };
+            }
+        });
+
+        matrixTbody.innerHTML = '';
+        const baseSku = document.getElementById('sku')?.value.trim() || 'MOR';
+
+        const attrNames = validAttrs.map(a => a.name.trim());
+        const attrValuesMatrix = validAttrs.map(a => a.values.map(v => ({ attr: a.name.trim(), val: v })));
+
+        let combinations = [];
+        if (attrValuesMatrix.length === 1) {
+            combinations = attrValuesMatrix[0].map(item => [item]);
+        } else {
+            combinations = cartesianProduct(attrValuesMatrix);
+        }
+
+        combinations.forEach(combo => {
+            const optionsObj = {};
+            const valParts = [];
+            const badgeChips = [];
+
+            combo.forEach(item => {
+                optionsObj[item.attr] = item.val;
+                valParts.push(item.val);
+                badgeChips.push(`<span class="variant-combination-badge"><strong>${escapeHtml(item.attr)}:</strong> ${escapeHtml(item.val)}</span>`);
+            });
+
+            const comboName = valParts.join(' / ');
+            const comboKey = valParts.join('__');
+            const autoSku = baseSku + '-' + valParts.map(p => p.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '')).join('-');
+
+            const existing = existingRowMap[comboKey];
+            const stockVal = existing ? existing.stock : (document.getElementById('bulkStockInput')?.value || '15');
+            const priceVal = existing ? existing.price : (document.getElementById('bulkPriceInput')?.value || '0.00');
+            const skuVal = existing ? existing.sku : autoSku;
+            const activeVal = existing ? existing.active : true;
+
+            appendMatrixRow({
+                comboKey: comboKey,
+                name: comboName,
+                optionsJson: JSON.stringify(optionsObj),
+                badgeHtml: badgeChips.join(' '),
+                sku: skuVal,
+                priceModifier: priceVal,
+                stock: stockVal,
+                isActive: activeVal,
+                variantType: 'combinacion'
+            });
+        });
+
+        if (noMatrixNotice) noMatrixNotice.style.display = 'none';
+    }
+
+    function appendMatrixRow(data) {
+        const idx = matrixRowIndex++;
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-combo-key', data.comboKey || ('manual_' + idx));
+        tr.innerHTML = `
+            <td>
+                <input type="hidden" name="variants[${idx}][variant_type]" value="${escapeHtml(data.variantType || 'combinacion')}">
+                <input type="hidden" name="variants[${idx}][options]" value="${escapeHtml(data.optionsJson || '{}')}">
+                <input type="hidden" name="variants[${idx}][value]" value="${escapeHtml(data.name)}">
+                <div style="margin-bottom: 4px;">
+                    ${data.badgeHtml || `<span class="variant-combination-badge">${escapeHtml(data.name)}</span>`}
+                </div>
+                <input type="text" name="variants[${idx}][name]" class="form-input" value="${escapeHtml(data.name)}" style="font-size: 0.75rem; font-weight: 600; padding: 2px 6px;" placeholder="Nombre de combinación" required>
+            </td>
+            <td>
+                <input type="text" name="variants[${idx}][sku]" class="form-input matrix-sku-input" value="${escapeHtml(data.sku || '')}" placeholder="SKU...">
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0" name="variants[${idx}][price_modifier]" class="form-input matrix-price-input" value="${escapeHtml(data.priceModifier || '0.00')}" placeholder="0.00">
+            </td>
+            <td>
+                <input type="number" min="0" name="variants[${idx}][stock_quantity]" class="form-input matrix-stock-input" value="${escapeHtml(data.stock || '15')}" style="font-weight: 700; color: var(--color-primary-dark);" required>
+            </td>
+            <td style="text-align: center;">
+                <input type="hidden" name="variants[${idx}][is_active]" value="0">
+                <input type="checkbox" name="variants[${idx}][is_active]" class="matrix-active-check" value="1" ${data.isActive ? 'checked' : ''}>
+            </td>
+            <td style="text-align: center;">
+                <button type="button" class="btn-remove-variant-row" onclick="this.closest('tr').remove(); checkMatrixEmpty();" title="Eliminar variante">✕</button>
+            </td>
+        `;
+
+        matrixTbody.appendChild(tr);
+        if (noMatrixNotice) noMatrixNotice.style.display = 'none';
+    }
+
+    window.checkMatrixEmpty = function() {
+        if (matrixTbody.children.length === 0 && noMatrixNotice) {
+            noMatrixNotice.style.display = 'block';
+        }
+    };
+
+    document.getElementById('btnGenerateMatrix')?.addEventListener('click', generateMatrixCombinations);
+
+    document.getElementById('btnAddManualRow')?.addEventListener('click', () => {
+        appendMatrixRow({
+            name: 'Variante Personalizada',
+            optionsJson: '{}',
+            badgeHtml: '<span class="variant-combination-badge">Manual</span>',
+            sku: '',
+            priceModifier: '0.00',
+            stock: '15',
+            isActive: true,
+            variantType: 'combinacion'
+        });
+    });
+
+    document.getElementById('btnApplyBulkStock')?.addEventListener('click', function() {
+        const val = document.getElementById('bulkStockInput')?.value || '15';
+        matrixTbody.querySelectorAll('.matrix-stock-input').forEach(inp => inp.value = val);
+    });
+
+    document.getElementById('btnApplyBulkPrice')?.addEventListener('click', function() {
+        const val = document.getElementById('bulkPriceInput')?.value || '0.00';
+        matrixTbody.querySelectorAll('.matrix-price-input').forEach(inp => inp.value = val);
+    });
+
+    document.getElementById('btnClearMatrix')?.addEventListener('click', function() {
+        if (confirm('¿Deseas vaciar todas las combinaciones de la matriz?')) {
+            matrixTbody.innerHTML = '';
+            checkMatrixEmpty();
+        }
+    });
+
+    // ------------------------------------------------------------------------
+    // 4. CUSTOMIZATIONS & ADD-ONS STATE & BUILDER
+    // ------------------------------------------------------------------------
+    let customizationGroups = [];
+    const customizationsContainer = document.getElementById('customizationsContainer');
+    const customizationsConfigInput = document.getElementById('customizationsConfigInput');
+    const noCustomizationsNotice = document.getElementById('noCustomizationsNotice');
+
+    function renderCustomizations() {
+        customizationsContainer.innerHTML = '';
+        if (customizationGroups.length === 0) {
+            if (noCustomizationsNotice) noCustomizationsNotice.style.display = 'block';
+            customizationsConfigInput.value = '';
+            return;
+        }
+
+        if (noCustomizationsNotice) noCustomizationsNotice.style.display = 'none';
+
+        customizationGroups.forEach((group, gIdx) => {
+            const card = document.createElement('div');
+            card.className = 'customization-item-card';
+            card.innerHTML = `
+                <div class="customization-item-header">
+                    <div style="font-weight: 700; font-size: 0.8rem; color: var(--color-primary-dark);">
+                        Grupo de Opción #${gIdx + 1}
+                    </div>
+                    <button type="button" class="btn-remove-variant-row" data-remove-group="${gIdx}" title="Eliminar grupo">✕</button>
+                </div>
+                <div class="grid" style="grid-template-columns: 2fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted);">Título de la Opción (ej: Envoltura de Regalo, Dedicatoria)</label>
+                        <input type="text" class="form-input custom-group-title" value="${escapeHtml(group.title)}" placeholder="Ej: Envoltura de Regalo">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-muted);">Tipo de Selección</label>
+                        <select class="form-select custom-group-type">
+                            <option value="single" ${group.selectionType === 'single' ? 'selected' : ''}>🔘 Selección Única (Dropdown / Radio)</option>
+                            <option value="multiple" ${group.selectionType === 'multiple' ? 'selected' : ''}>☑️ Selección Múltiple (Checkboxes)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="background: #FAF8F6; padding: 0.65rem 0.85rem; border-radius: var(--radius-xs); border: 1px solid var(--color-border-light);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                        <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-text);">Valores y Costo Extra</span>
+                        <button type="button" class="btn btn-outline btn-sm" data-add-option-val="${gIdx}" style="font-size: 0.68rem; padding: 0.2rem 0.5rem;">+ Agregar Valor</button>
+                    </div>
+                    <div class="custom-group-values-list" data-gidx="${gIdx}">
+                        ${group.options.map((opt, oIdx) => `
+                            <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;">
+                                <input type="text" class="form-input opt-val-label" data-gidx="${gIdx}" data-oidx="${oIdx}" value="${escapeHtml(opt.label)}" placeholder="Nombre de opción (ej: Caja de Lujo)" style="flex: 2; font-size: 0.75rem;">
+                                <div style="display: flex; align-items: center; gap: 2px;">
+                                    <span style="font-size: 0.7rem; color: var(--color-text-muted);">+$</span>
+                                    <input type="number" step="0.01" min="0" class="form-input opt-val-price" data-gidx="${gIdx}" data-oidx="${oIdx}" value="${opt.price}" placeholder="0.00" style="width: 75px; font-size: 0.75rem;">
+                                </div>
+                                <button type="button" class="btn-remove-variant-row" data-remove-opt="${gIdx}_${oIdx}" style="width: 22px; height: 22px; font-size: 0.65rem;">✕</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Bind Title
+            card.querySelector('.custom-group-title').addEventListener('input', function() {
+                group.title = this.value;
+                syncCustomizationsConfig();
+            });
+
+            // Bind Selection Type
+            card.querySelector('.custom-group-type').addEventListener('change', function() {
+                group.selectionType = this.value;
+                syncCustomizationsConfig();
+            });
+
+            // Bind Remove Group
+            card.querySelector('[data-remove-group]').addEventListener('click', function() {
+                customizationGroups.splice(gIdx, 1);
+                renderCustomizations();
+                syncCustomizationsConfig();
+            });
+
+            // Bind Add Option Value
+            card.querySelector('[data-add-option-val]').addEventListener('click', function() {
+                group.options.push({ label: 'Nueva Opción', price: '0.00' });
+                renderCustomizations();
+                syncCustomizationsConfig();
+            });
+
+            // Bind Option Label & Price inputs
+            card.querySelectorAll('.opt-val-label').forEach(inp => {
+                inp.addEventListener('input', function() {
+                    const gi = parseInt(this.getAttribute('data-gidx'));
+                    const oi = parseInt(this.getAttribute('data-oidx'));
+                    if (customizationGroups[gi] && customizationGroups[gi].options[oi]) {
+                        customizationGroups[gi].options[oi].label = this.value;
+                        syncCustomizationsConfig();
+                    }
+                });
+            });
+
+            card.querySelectorAll('.opt-val-price').forEach(inp => {
+                inp.addEventListener('input', function() {
+                    const gi = parseInt(this.getAttribute('data-gidx'));
+                    const oi = parseInt(this.getAttribute('data-oidx'));
+                    if (customizationGroups[gi] && customizationGroups[gi].options[oi]) {
+                        customizationGroups[gi].options[oi].price = this.value;
+                        syncCustomizationsConfig();
+                    }
+                });
+            });
+
+            card.querySelectorAll('[data-remove-opt]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const [gi, oi] = this.getAttribute('data-remove-opt').split('_').map(Number);
+                    if (customizationGroups[gi]) {
+                        customizationGroups[gi].options.splice(oi, 1);
+                        renderCustomizations();
+                        syncCustomizationsConfig();
+                    }
+                });
+            });
+
+            customizationsContainer.appendChild(card);
+        });
+
+        syncCustomizationsConfig();
+    }
+
+    function syncCustomizationsConfig() {
+        const clean = customizationGroups
+            .filter(g => g.title.trim() !== '')
+            .map(g => ({
+                title: g.title.trim(),
+                selectionType: g.selectionType || 'single',
+                options: g.options.filter(o => o.label.trim() !== '').map(o => ({
+                    label: o.label.trim(),
+                    price: parseFloat(o.price || 0)
+                }))
+            }));
+        customizationsConfigInput.value = clean.length > 0 ? JSON.stringify(clean) : '';
+    }
+
+    document.getElementById('btnAddCustomizationGroup')?.addEventListener('click', () => {
+        customizationGroups.push({
+            title: 'Envoltura de Regalo & Dedicatoria',
+            selectionType: 'single',
+            options: [
+                { label: 'Caja Regalo Premium con Lazo', price: '3.00' },
+                { label: 'Bolsa de Seda Moraia', price: '2.00' }
+            ]
+        });
+        renderCustomizations();
+    });
+
+    // ------------------------------------------------------------------------
+    // 5. DROPZONE & SORTABLE GALLERY LOGIC
+    // ------------------------------------------------------------------------
     const dropzoneBox = document.getElementById('dropzoneBox');
     const imagesInput = document.getElementById('images_input');
     const sortableGrid = document.getElementById('sortableGrid');
@@ -381,7 +918,7 @@ document.addEventListener('DOMContentLoaded', function() {
         card.className = 'sortable-image-card';
         card.setAttribute('data-id', id);
         card.innerHTML = `
-            <img src="${url}" alt="${title}">
+            <img src="${url}" alt="${escapeHtml(title)}">
             <span class="card-badge-cover">★ Portada</span>
             <span class="card-badge-order">#</span>
             <span class="card-tag-new">Nueva</span>
@@ -461,7 +998,23 @@ document.addEventListener('DOMContentLoaded', function() {
     productForm.addEventListener('submit', function() {
         updateOrderAndBadges();
         syncDataTransferInput();
+        syncOptionsConfig();
+        syncCustomizationsConfig();
     });
+
+    function escapeHtml(string) {
+        if (!string) return '';
+        return String(string)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // Initialize with standard default attributes
+    addAttribute('Talla', ['S', 'M', 'L']);
+    addAttribute('Color', ['Rosa Mauve', 'Negro Noche']);
 });
 </script>
 @endpush

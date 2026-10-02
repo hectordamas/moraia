@@ -15,6 +15,9 @@ class ProductVariant extends Model
         'variant_type',
         'name',
         'value',
+        'options',
+        'sku',
+        'selection_type',
         'price_modifier',
         'stock_quantity',
         'is_active',
@@ -23,6 +26,7 @@ class ProductVariant extends Model
     protected function casts(): array
     {
         return [
+            'options' => 'array',
             'price_modifier' => 'decimal:2',
             'stock_quantity' => 'integer',
             'is_active' => 'boolean',

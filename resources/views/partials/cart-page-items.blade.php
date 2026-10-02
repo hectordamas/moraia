@@ -38,6 +38,11 @@
                                             {{ $item['variant_name'] }}
                                         </div>
                                     @endif
+                                    @if(!empty($item['customization_text']))
+                                        <div style="font-size: 0.75rem; color: var(--color-primary-dark); margin-top: 2px; font-weight: 500;">
+                                            ✨ {{ $item['customization_text'] }}
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </td>

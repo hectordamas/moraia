@@ -75,3 +75,56 @@ test('admin can create manual order through pos store', function () {
     $variant->refresh();
     expect($variant->stock_quantity)->toBe(8);
 });
+
+test('admin dashboard metrics reflect only delivered orders while recent orders show all statuses', function () {
+    Order::query()->delete();
+
+    // Create a pending order of $50
+    Order::create([
+        'order_code' => 'MOR-PENDING',
+        'customer_name' => 'Pendiente',
+        'customer_lastname' => 'User',
+        'customer_phone' => '04120000001',
+        'customer_whatsapp' => '04120000001',
+        'delivery_method' => 'delivery_caracas',
+        'delivery_city' => 'Caracas',
+        'delivery_address' => 'Caracas',
+        'subtotal' => 50.00,
+        'shipping_fee' => 0.00,
+        'total' => 50.00,
+        'status' => 'Pendiente',
+    ]);
+
+    // Create a delivered order of $100
+    Order::create([
+        'order_code' => 'MOR-DELIVERED',
+        'customer_name' => 'Entregada',
+        'customer_lastname' => 'User',
+        'customer_phone' => '04120000002',
+        'customer_whatsapp' => '04120000002',
+        'delivery_method' => 'delivery_caracas',
+        'delivery_city' => 'Caracas',
+        'delivery_address' => 'Caracas',
+        'subtotal' => 100.00,
+        'shipping_fee' => 0.00,
+        'total' => 100.00,
+        'status' => 'Entregada',
+    ]);
+
+    $response = $this->actingAs($this->admin)->get(route('admin.dashboard', ['period' => 'this_month']));
+
+    $response->assertStatus(200);
+    // Total revenue should only include delivered order ($100.00)
+    $response->assertViewHas('totalRevenue', 100.00);
+    // Total orders metric should only include delivered order (1)
+    $response->assertViewHas('totalOrders', 1);
+    // Ticket promedio should be $100.00
+    $response->assertViewHas('averageOrderValue', 100.00);
+    // Pending orders count should still detect the pending order (1)
+    $response->assertViewHas('pendingOrdersCount', 1);
+    // Delivered orders count (1)
+    $response->assertViewHas('deliveredOrdersCount', 1);
+    // Recent orders table should contain both orders (2)
+    $recentOrders = $response->viewData('recentOrders');
+    expect($recentOrders)->toHaveCount(2);
+});

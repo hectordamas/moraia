@@ -50,6 +50,8 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'compare_at_price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'required|integer|min:0',
+            'options_config' => 'nullable',
+            'customizations_config' => 'nullable',
             'short_description' => 'nullable|string|max:500',
             'description' => 'nullable|string',
             'is_active' => 'nullable|boolean',
@@ -60,9 +62,12 @@ class ProductController extends Controller
             'seo_description' => 'nullable|string|max:300',
             'images.*' => ['nullable', 'image', 'max:4096', new SquareImageRule],
             'variants' => 'nullable|array',
-            'variants.*.name' => 'nullable|string|max:100',
+            'variants.*.name' => 'nullable|string|max:150',
             'variants.*.variant_type' => 'nullable|string|max:50',
-            'variants.*.value' => 'nullable|string|max:100',
+            'variants.*.value' => 'nullable|string|max:255',
+            'variants.*.options' => 'nullable',
+            'variants.*.sku' => 'nullable|string|max:60',
+            'variants.*.selection_type' => 'nullable|string|in:single,multiple',
             'variants.*.price_modifier' => 'nullable|numeric',
             'variants.*.stock_quantity' => 'nullable|integer|min:0',
         ]);
@@ -73,6 +78,24 @@ class ProductController extends Controller
             $slug .= '-'.($count + 1);
         }
 
+        $optionsConfig = $request->filled('options_config')
+            ? (is_string($request->input('options_config')) ? json_decode($request->input('options_config'), true) : $request->input('options_config'))
+            : null;
+
+        $customizationsConfig = $request->filled('customizations_config')
+            ? (is_string($request->input('customizations_config')) ? json_decode($request->input('customizations_config'), true) : $request->input('customizations_config'))
+            : null;
+
+        // Calculate total stock if matrix variants are supplied
+        $submittedVariants = $request->input('variants', []);
+        $totalStock = (int) $validated['stock_quantity'];
+        if (is_array($submittedVariants) && count($submittedVariants) > 0) {
+            $combinationVariants = array_filter($submittedVariants, fn ($v) => ! empty($v['name']) && (! isset($v['variant_type']) || $v['variant_type'] === 'combinacion' || $v['variant_type'] === 'talla' || $v['variant_type'] === 'color'));
+            if (count($combinationVariants) > 0) {
+                $totalStock = array_sum(array_map(fn ($v) => (int) ($v['stock_quantity'] ?? 0), $combinationVariants));
+            }
+        }
+
         $product = Product::create([
             'category_id' => $validated['category_id'],
             'name' => $validated['name'],
@@ -80,7 +103,9 @@ class ProductController extends Controller
             'sku' => $validated['sku'] ?? 'MOR-'.strtoupper(Str::random(6)),
             'price' => $validated['price'],
             'compare_at_price' => $validated['compare_at_price'] ?? null,
-            'stock_quantity' => $validated['stock_quantity'],
+            'stock_quantity' => $totalStock,
+            'options_config' => $optionsConfig,
+            'customizations_config' => $customizationsConfig,
             'short_description' => $validated['short_description'] ?? null,
             'description' => $validated['description'] ?? null,
             'is_active' => ! empty($validated['is_active']),
@@ -143,24 +168,32 @@ class ProductController extends Controller
             ]);
         }
 
-        // Handle Variants (Tallas & Colores)
-        if ($request->has('variants') && is_array($request->input('variants'))) {
-            foreach ($request->input('variants') as $vData) {
+        // Handle Variants (Combinaciones & Opciones de Personalización)
+        if (is_array($submittedVariants)) {
+            foreach ($submittedVariants as $vData) {
                 if (! empty($vData['name'])) {
+                    $parsedOptions = null;
+                    if (! empty($vData['options'])) {
+                        $parsedOptions = is_string($vData['options']) ? json_decode($vData['options'], true) : $vData['options'];
+                    }
+
                     ProductVariant::create([
                         'product_id' => $product->id,
-                        'variant_type' => $vData['variant_type'] ?? 'talla',
+                        'variant_type' => $vData['variant_type'] ?? 'combinacion',
                         'name' => $vData['name'],
                         'value' => $vData['value'] ?? $vData['name'],
+                        'options' => $parsedOptions,
+                        'sku' => $vData['sku'] ?? null,
+                        'selection_type' => $vData['selection_type'] ?? 'single',
                         'price_modifier' => ! empty($vData['price_modifier']) ? (float) $vData['price_modifier'] : 0.00,
-                        'stock_quantity' => ! empty($vData['stock_quantity']) ? (int) $vData['stock_quantity'] : 10,
+                        'stock_quantity' => isset($vData['stock_quantity']) ? (int) $vData['stock_quantity'] : 10,
                         'is_active' => isset($vData['is_active']) ? (bool) $vData['is_active'] : true,
                     ]);
                 }
             }
         }
 
-        return redirect()->route('admin.products.index')->with('success', 'Producto creado exitosamente con sus imágenes y variantes.');
+        return redirect()->route('admin.products.edit', $product->id)->with('success', '¡Producto creado exitosamente! Ahora puedes continuar configurando sus detalles o variantes.');
     }
 
     public function edit(Product $product): View
@@ -183,6 +216,8 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'compare_at_price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'required|integer|min:0',
+            'options_config' => 'nullable',
+            'customizations_config' => 'nullable',
             'short_description' => 'nullable|string|max:500',
             'description' => 'nullable|string',
             'is_active' => 'nullable|boolean',
@@ -194,12 +229,33 @@ class ProductController extends Controller
             'images.*' => ['nullable', 'image', 'max:4096', new SquareImageRule],
             'variants' => 'nullable|array',
             'variants.*.id' => 'nullable|integer',
-            'variants.*.name' => 'nullable|string|max:100',
+            'variants.*.name' => 'nullable|string|max:150',
             'variants.*.variant_type' => 'nullable|string|max:50',
-            'variants.*.value' => 'nullable|string|max:100',
+            'variants.*.value' => 'nullable|string|max:255',
+            'variants.*.options' => 'nullable',
+            'variants.*.sku' => 'nullable|string|max:60',
+            'variants.*.selection_type' => 'nullable|string|in:single,multiple',
             'variants.*.price_modifier' => 'nullable|numeric',
             'variants.*.stock_quantity' => 'nullable|integer|min:0',
         ]);
+
+        $optionsConfig = $request->filled('options_config')
+            ? (is_string($request->input('options_config')) ? json_decode($request->input('options_config'), true) : $request->input('options_config'))
+            : null;
+
+        $customizationsConfig = $request->filled('customizations_config')
+            ? (is_string($request->input('customizations_config')) ? json_decode($request->input('customizations_config'), true) : $request->input('customizations_config'))
+            : null;
+
+        // Calculate total stock if matrix variants are supplied
+        $submittedVariants = $request->input('variants', []);
+        $totalStock = (int) $validated['stock_quantity'];
+        if (is_array($submittedVariants) && count($submittedVariants) > 0) {
+            $combinationVariants = array_filter($submittedVariants, fn ($v) => ! empty($v['name']) && (! isset($v['variant_type']) || $v['variant_type'] === 'combinacion' || $v['variant_type'] === 'talla' || $v['variant_type'] === 'color'));
+            if (count($combinationVariants) > 0) {
+                $totalStock = array_sum(array_map(fn ($v) => (int) ($v['stock_quantity'] ?? 0), $combinationVariants));
+            }
+        }
 
         $product->update([
             'category_id' => $validated['category_id'],
@@ -207,7 +263,9 @@ class ProductController extends Controller
             'sku' => $validated['sku'] ?? $product->sku,
             'price' => $validated['price'],
             'compare_at_price' => $validated['compare_at_price'] ?? null,
-            'stock_quantity' => $validated['stock_quantity'],
+            'stock_quantity' => $totalStock,
+            'options_config' => $optionsConfig,
+            'customizations_config' => $customizationsConfig,
             'short_description' => $validated['short_description'] ?? null,
             'description' => $validated['description'] ?? null,
             'is_active' => ! empty($validated['is_active']),
@@ -315,17 +373,24 @@ class ProductController extends Controller
             ]);
         }
 
-        // 5. Handle Variants Sync (Tallas & Colores)
-        $submittedVariants = $request->input('variants', []);
+        // 5. Handle Variants Sync (Combinaciones & Opciones)
         $keptVariantIds = [];
 
         if (is_array($submittedVariants)) {
             foreach ($submittedVariants as $vData) {
                 if (! empty($vData['name'])) {
+                    $parsedOptions = null;
+                    if (! empty($vData['options'])) {
+                        $parsedOptions = is_string($vData['options']) ? json_decode($vData['options'], true) : $vData['options'];
+                    }
+
                     $variantAttributes = [
-                        'variant_type' => $vData['variant_type'] ?? 'talla',
+                        'variant_type' => $vData['variant_type'] ?? 'combinacion',
                         'name' => $vData['name'],
                         'value' => $vData['value'] ?? $vData['name'],
+                        'options' => $parsedOptions,
+                        'sku' => $vData['sku'] ?? null,
+                        'selection_type' => $vData['selection_type'] ?? 'single',
                         'price_modifier' => ! empty($vData['price_modifier']) ? (float) $vData['price_modifier'] : 0.00,
                         'stock_quantity' => isset($vData['stock_quantity']) ? (int) $vData['stock_quantity'] : 10,
                         'is_active' => isset($vData['is_active']) ? (bool) $vData['is_active'] : true,
@@ -349,7 +414,7 @@ class ProductController extends Controller
             ->whereNotIn('id', $keptVariantIds)
             ->delete();
 
-        return redirect()->route('admin.products.index')->with('success', 'Producto, imágenes y variantes actualizados correctamente.');
+        return redirect()->route('admin.products.edit', $product->id)->with('success', '¡Producto, imágenes y variantes actualizados correctamente!');
     }
 
     public function destroy(Product $product): RedirectResponse

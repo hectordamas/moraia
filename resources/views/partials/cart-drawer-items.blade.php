@@ -20,6 +20,11 @@
                 @if(!empty($item['variant_name']))
                     <span class="cart-item-variant">{{ $item['variant_name'] }}</span>
                 @endif
+                @if(!empty($item['customization_text']))
+                    <div style="font-size: 0.72rem; color: var(--color-primary-dark); margin-top: 2px;">
+                        ✨ {{ $item['customization_text'] }}
+                    </div>
+                @endif
                 <div class="cart-item-price">${{ number_format($item['price'], 2) }}</div>
                 
                 <div class="cart-item-bottom">

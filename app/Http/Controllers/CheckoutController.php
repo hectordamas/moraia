@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -56,6 +58,31 @@ class CheckoutController extends Controller
             'gift_card_message' => 'nullable|string|max:500',
         ]);
 
+        // Pre-validate live stock before processing order
+        foreach ($cart as $item) {
+            $availableStock = 0;
+            if (! empty($item['variant_id'])) {
+                $var = ProductVariant::find($item['variant_id']);
+                $availableStock = $var ? (int) $var->stock_quantity : 0;
+            } elseif (! empty($item['product_id'])) {
+                $prod = Product::find($item['product_id']);
+                $availableStock = $prod ? (int) $prod->stock_quantity : 0;
+            }
+
+            if ($item['quantity'] > $availableStock) {
+                $itemLabel = $item['name'].(! empty($item['variant_name']) ? " ({$item['variant_name']})" : '');
+                $msg = $availableStock > 0
+                    ? "Lo sentimos, solo quedan {$availableStock} unidades disponibles de '{$itemLabel}'. Por favor ajusta tu bolsa."
+                    : "El producto '{$itemLabel}' se ha agotado. Por favor retíralo de tu bolsa para continuar.";
+
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+
+                return redirect()->route('cart')->with('error', $msg);
+            }
+        }
+
         $subtotal = 0;
         foreach ($cart as $item) {
             $subtotal += ($item['price'] * $item['quantity']);
@@ -91,13 +118,18 @@ class CheckoutController extends Controller
         ]);
 
         foreach ($cart as $item) {
+            $details = $item['variant_name'] ?? null;
+            if (! empty($item['customization_text'])) {
+                $details = $details ? "{$details} • {$item['customization_text']}" : $item['customization_text'];
+            }
+
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $item['product_id'] ?? null,
                 'variant_id' => $item['variant_id'] ?? null,
                 'product_name' => $item['name'],
                 'product_image' => $item['image'] ?? null,
-                'variant_details' => $item['variant_name'] ?? null,
+                'variant_details' => $details,
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['price'],
                 'total_price' => $item['price'] * $item['quantity'],
