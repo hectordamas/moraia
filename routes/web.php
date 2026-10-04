@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ContactMessageController as AdminMessageController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PackagingController as AdminPackagingController;
 use App\Http\Controllers\Admin\PosController as AdminPosController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
@@ -69,6 +70,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Categories CRUD & Drag and Drop Reordering
         Route::post('/categories/reorder', [AdminCategoryController::class, 'reorder'])->name('categories.reorder');
         Route::resource('categories', AdminCategoryController::class);
+
+        // Packagings (Empaques) CRUD & Drag and Drop Reordering
+        Route::post('/packagings/reorder', [AdminPackagingController::class, 'reorder'])->name('packagings.reorder');
+        Route::patch('/packagings/{packaging}/toggle-active', [AdminPackagingController::class, 'toggleActive'])->name('packagings.toggleActive');
+        Route::resource('packagings', AdminPackagingController::class);
 
         // Orders Management & Point of Sale (POS)
         Route::get('/pos', [AdminPosController::class, 'index'])->name('pos.index');

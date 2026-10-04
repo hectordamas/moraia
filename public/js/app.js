@@ -794,14 +794,26 @@ function removeFromCart(cartKey) {
 }
 
 let currentShippingFee = 3.00;
+let currentPackagingFee = 0.00;
 let currentCartSubtotal = 0;
 
-// Initialize cart subtotal from DOM if present
+// Initialize cart subtotal and packaging fee from DOM if present
 document.addEventListener('DOMContentLoaded', () => {
   const stEl = document.querySelector('.drawer-cart-subtotal');
   if (stEl) {
     currentCartSubtotal = parseFloat(stEl.textContent.replace(/[^0-9.]/g, '')) || 0;
   }
+  const checkedPack = document.querySelector('.drawer-packaging-card input[name="packaging_id"]:checked');
+  if (checkedPack) {
+    const packCard = checkedPack.closest('.drawer-packaging-card');
+    if (packCard) {
+      const match = packCard.getAttribute('onclick')?.match(/selectDrawerPackaging\(\s*\d+\s*,\s*([\d.]+)/);
+      if (match && match[1]) {
+        currentPackagingFee = parseFloat(match[1]) || 0;
+      }
+    }
+  }
+  updateDrawerTotals();
 });
 
 function updateCartUI(data) {
@@ -889,9 +901,27 @@ window.goToDrawerStep = function(step) {
   }
 };
 
+window.selectDrawerPackaging = function(id, fee, element) {
+  currentPackagingFee = parseFloat(fee) || 0.00;
+  document.querySelectorAll('.drawer-packaging-card').forEach(card => card.classList.remove('active'));
+  if (element) {
+    element.classList.add('active');
+    const radio = element.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
+  }
+
+  const feeDisplay = document.getElementById('drawer-packaging-fee-display');
+  if (feeDisplay) {
+    feeDisplay.textContent = currentPackagingFee > 0 ? `+$${currentPackagingFee.toFixed(2)}` : 'Incluido';
+    feeDisplay.style.color = currentPackagingFee > 0 ? 'var(--color-primary)' : '#2E7D32';
+  }
+
+  updateDrawerTotals();
+};
+
 window.selectDrawerDelivery = function(method, fee, element) {
   currentShippingFee = fee;
-  document.querySelectorAll('.drawer-delivery-card').forEach(card => card.classList.remove('active'));
+  document.querySelectorAll('.drawer-delivery-card:not(.drawer-packaging-card)').forEach(card => card.classList.remove('active'));
   if (element) {
     element.classList.add('active');
     const radio = element.querySelector('input[type="radio"]');
@@ -909,7 +939,7 @@ window.selectDrawerDelivery = function(method, fee, element) {
 function updateDrawerTotals() {
   const totalDisplay = document.getElementById('drawer-total-display');
   if (totalDisplay) {
-    const total = currentCartSubtotal + currentShippingFee;
+    const total = currentCartSubtotal + currentShippingFee + currentPackagingFee;
     totalDisplay.textContent = `$${total.toFixed(2)}`;
   }
 }

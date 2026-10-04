@@ -4,6 +4,9 @@
     foreach ($cart as $item) {
         $subtotal += ($item['price'] * $item['quantity']);
     }
+    $packagings = \App\Models\Packaging::active()->get();
+    $defaultPack = $packagings->firstWhere('is_default', true) ?? $packagings->first();
+    $defaultPackPrice = $defaultPack ? (float)$defaultPack->price : 0.00;
 @endphp
 
 <div class="drawer drawer-cart" role="dialog" aria-label="Tu Bolsa y Checkout">
@@ -166,6 +169,42 @@
                     <textarea name="delivery_address" class="form-textarea" rows="2" style="padding: 0.55rem 0.75rem; font-size: 0.85rem;" placeholder="Calle, edificio, casa o nombre de la agencia" required></textarea>
                 </div>
 
+                <!-- Packaging Selection -->
+                @if($packagings->isNotEmpty())
+                    <div class="drawer-form-section-title">Empaque & Presentación</div>
+                    <div class="drawer-packaging-options" style="display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4);">
+                        @foreach($packagings as $pIdx => $pack)
+                            @php
+                                $isPackActive = $pack->is_default || ($pIdx === 0 && !old('packaging_id'));
+                                $packPrice = (float) $pack->price;
+                            @endphp
+                            <label class="drawer-delivery-card drawer-packaging-card {{ $isPackActive ? 'active' : '' }}" onclick="selectDrawerPackaging({{ $pack->id }}, {{ $packPrice }}, this)" style="cursor: pointer; padding: 10px 12px; margin-bottom: 0;">
+                                <input type="radio" name="packaging_id" value="{{ $pack->id }}" {{ $isPackActive ? 'checked' : '' }} style="display:none;">
+                                <div class="flex items-center gap-3" style="width: 100%;">
+                                    @if($pack->image_path)
+                                        <img src="{{ asset($pack->image_path) }}" alt="{{ $pack->name }}" style="width: 42px; height: 42px; object-fit: cover; border-radius: var(--radius-xs); border: 1px solid var(--color-border-light); flex-shrink: 0;">
+                                    @else
+                                        <div style="width: 42px; height: 42px; border-radius: var(--radius-xs); background: var(--color-surface-soft); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                                            🎁
+                                        </div>
+                                    @endif
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div class="flex items-center justify-between" style="gap: 4px;">
+                                            <span style="font-weight: 600; font-size: 0.82rem; color: var(--color-text); line-height: 1.2;">{{ $pack->name }}</span>
+                                            <span style="font-weight: 700; color: {{ $packPrice > 0 ? 'var(--color-primary)' : '#2E7D32' }}; font-size: 0.78rem; white-space: nowrap;">
+                                                {{ $packPrice > 0 ? '+$' . number_format($packPrice, 2) : 'Incluido' }}
+                                            </span>
+                                        </div>
+                                        @if($pack->capacity)
+                                            <span style="font-size: 0.7rem; color: var(--color-text-muted); display: block; margin-top: 2px;">📦 {{ $pack->capacity }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                @endif
+
                 <div style="background-color: var(--color-surface-soft); padding: var(--space-3); border-radius: var(--radius-xs); border: 1px solid var(--color-border); margin-bottom: var(--space-4);">
                     <label class="flex items-center gap-2" style="cursor: pointer; margin-bottom: 0;">
                         <input type="checkbox" name="is_gift" value="1" id="drawer_is_gift" onchange="toggleDrawerGift(this.checked)">
@@ -192,13 +231,19 @@
                         <span style="color: var(--color-text-muted);">Subtotal productos:</span>
                         <span class="drawer-cart-subtotal" style="font-weight: 600;">${{ number_format($subtotal, 2) }}</span>
                     </div>
+                    <div class="flex items-center justify-between" style="font-size: 0.82rem; margin-bottom: 3px;">
+                        <span style="color: var(--color-text-muted);">Empaque:</span>
+                        <span id="drawer-packaging-fee-display" style="font-weight: 600; color: {{ $defaultPackPrice > 0 ? 'var(--color-primary)' : '#2E7D32' }};">
+                            {{ $defaultPackPrice > 0 ? '+$' . number_format($defaultPackPrice, 2) : 'Incluido' }}
+                        </span>
+                    </div>
                     <div class="flex items-center justify-between" style="font-size: 0.82rem; margin-bottom: 6px;">
                         <span style="color: var(--color-text-muted);">Envío:</span>
                         <span id="drawer-shipping-fee-display" style="font-weight: 600;">$3.00</span>
                     </div>
                     <div class="flex items-center justify-between" style="font-size: 1.15rem; font-weight: 700; color: var(--color-text); padding-top: 6px; border-top: 1px solid var(--color-border-light);">
                         <span>Total a Pagar:</span>
-                        <span id="drawer-total-display" style="color: var(--color-primary);">${{ number_format($subtotal + 3.00, 2) }}</span>
+                        <span id="drawer-total-display" style="color: var(--color-primary);">${{ number_format($subtotal + 3.00 + $defaultPackPrice, 2) }}</span>
                     </div>
                 </div>
 

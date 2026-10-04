@@ -9,7 +9,7 @@
   position: relative;
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
   box-sizing: border-box;
 }
 
@@ -194,7 +194,7 @@ body.admin-sidebar-open {
   max-width: 100%;
   min-height: 100vh;
   box-sizing: border-box;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .admin-topbar {
@@ -2260,9 +2260,9 @@ form:has(.admin-sticky-actions) {
   flex-direction: column;
   position: -webkit-sticky;
   position: sticky;
-  top: 1.5rem;
+  top: calc(72px + 1.25rem);
   align-self: start;
-  max-height: calc(100vh - 3rem);
+  max-height: calc(100vh - 72px - 2.5rem);
   z-index: 100;
 }
 

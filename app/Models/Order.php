@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
@@ -24,6 +25,9 @@ class Order extends Model
         'is_gift',
         'gift_recipient_name',
         'gift_card_message',
+        'packaging_id',
+        'packaging_name',
+        'packaging_price',
         'subtotal',
         'shipping_fee',
         'total',
@@ -34,6 +38,7 @@ class Order extends Model
     {
         return [
             'is_gift' => 'boolean',
+            'packaging_price' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'shipping_fee' => 'decimal:2',
             'total' => 'decimal:2',
@@ -43,6 +48,11 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function packaging(): BelongsTo
+    {
+        return $this->belongsTo(Packaging::class);
     }
 
     public function getFullNameAttribute(): string
@@ -145,6 +155,12 @@ class Order extends Model
         $lines[] = "• *Ciudad:* {$this->delivery_city}";
         $lines[] = "• *Dirección:* {$this->delivery_address}";
 
+        if ($this->packaging_name) {
+            $lines[] = '';
+            $lines[] = '*PRESENTACIÓN & EMPAQUE*';
+            $lines[] = "• *Empaque:* {$this->packaging_name}";
+        }
+
         if ($this->is_gift) {
             $lines[] = '';
             $lines[] = '*DETALLES DEL REGALO*';
@@ -180,6 +196,12 @@ class Order extends Model
         $lines[] = '*RESUMEN DE LA ORDEN*';
         $lines[] = "• *Total Unidades:* {$totalUnits}";
         $lines[] = '• *Subtotal:* $'.number_format($this->subtotal, 2).' US$';
+
+        if ($this->packaging_price > 0) {
+            $lines[] = '• *Empaque ('.($this->packaging_name ?? 'Especial').'):* $'.number_format($this->packaging_price, 2).' US$';
+        } elseif ($this->packaging_name) {
+            $lines[] = "• *Empaque:* {$this->packaging_name} (Incluido)";
+        }
 
         if ($this->shipping_fee > 0) {
             $lines[] = '• *Envío:* $'.number_format($this->shipping_fee, 2).' US$';
@@ -226,6 +248,10 @@ class Order extends Model
         foreach ($items as $item) {
             $variant = $item->variant_details ? " ({$item->variant_details})" : '';
             $lines[] = "• {$item->quantity}x {$item->product_name}{$variant} - $".number_format($item->total_price, 2).' US$';
+        }
+
+        if ($this->packaging_name) {
+            $lines[] = "• *Empaque:* {$this->packaging_name}".($this->packaging_price > 0 ? ' (+$'.number_format($this->packaging_price, 2).')' : '');
         }
 
         $lines[] = '';

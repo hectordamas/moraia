@@ -209,6 +209,18 @@
                             </div>
                         </div>
 
+                        <!-- Packaging selection -->
+                        <div class="pos-field">
+                            <label for="posPackagingId">Empaque / Presentación</label>
+                            <select id="posPackagingId" name="packaging_id">
+                                @foreach($packagings as $pack)
+                                    <option value="{{ $pack->id }}" data-price="{{ (float)$pack->price }}" {{ $pack->is_default ? 'selected' : '' }}>
+                                        {{ $pack->name }} {{ (float)$pack->price > 0 ? '(+$'.number_format($pack->price, 2).')' : '(Gratis)' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <!-- Gift option -->
                         <div class="pos-checkbox-field">
                             <label class="pos-custom-checkbox">
@@ -775,14 +787,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Calculations
+    const packagingSelect = document.getElementById('posPackagingId');
     discountInput.addEventListener('input', recalculateTotals);
     shippingFeeInput.addEventListener('input', recalculateTotals);
+    if (packagingSelect) packagingSelect.addEventListener('change', recalculateTotals);
 
     function recalculateTotals() {
         const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
         const discount = parseFloat(discountInput.value) || 0;
         const shipping = parseFloat(shippingFeeInput.value) || 0;
-        const total = Math.max(0, (subtotal - discount) + shipping);
+        const packagingOpt = packagingSelect ? packagingSelect.options[packagingSelect.selectedIndex] : null;
+        const packagingFee = packagingOpt ? (parseFloat(packagingOpt.getAttribute('data-price')) || 0) : 0;
+        const total = Math.max(0, (subtotal - discount) + shipping + packagingFee);
 
         subtotalEl.textContent = '$' + subtotal.toFixed(2);
         
@@ -827,6 +843,7 @@ document.addEventListener('DOMContentLoaded', function() {
             delivery_city: document.getElementById('posDeliveryCity').value.trim(),
             delivery_address: document.getElementById('posDeliveryAddress').value.trim(),
             customer_notes: document.getElementById('posCustomerNotes').value.trim() || null,
+            packaging_id: document.getElementById('posPackagingId')?.value || null,
             status: document.getElementById('posOrderStatus').value,
             shipping_fee: parseFloat(shippingFeeInput.value) || 0,
             discount_amount: parseFloat(discountInput.value) || 0,

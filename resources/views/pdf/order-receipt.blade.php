@@ -412,6 +412,12 @@
                     <span class="info-label">Dirección:</span>
                     <span class="info-value">{{ $order->delivery_address }}</span>
                 </div>
+                @if($order->packaging_name)
+                    <div class="info-row" style="margin-top: 4px;">
+                        <span class="info-label">Empaque:</span>
+                        <span class="info-value"><strong>{{ $order->packaging_name }}</strong> {{ (float)$order->packaging_price > 0 ? '(+$' . number_format($order->packaging_price, 2) . ')' : '(Incluido)' }}</span>
+                    </div>
+                @endif
                 @if($order->is_gift)
                     <div class="gift-badge">
                         🎁 Regalo para: {{ $order->gift_recipient_name ?? 'Destinataria Especial' }}
@@ -491,6 +497,12 @@
                         <td class="label-cell">Subtotal:</td>
                         <td class="val-cell">${{ number_format($order->subtotal, 2) }} US$</td>
                     </tr>
+                    @if($order->packaging_name && (float)$order->packaging_price > 0)
+                        <tr>
+                            <td class="label-cell">Empaque ({{ $order->packaging_name }}):</td>
+                            <td class="val-cell">${{ number_format($order->packaging_price, 2) }} US$</td>
+                        </tr>
+                    @endif
                     <tr>
                         <td class="label-cell">Envío ({{ $order->delivery_method_label }}):</td>
                         <td class="val-cell">

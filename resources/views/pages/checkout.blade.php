@@ -116,19 +116,84 @@
                     </div>
                 </div>
 
-                <!-- 3. Gift Options (Personalized Box / Card) -->
+                <!-- 3. Packaging & Presentation Selection -->
                 <div class="checkout-card" style="margin-bottom: var(--space-6);">
                     <h2 class="checkout-card-title">
-                        <span>3. ¿Este pedido es un Regalo?</span>
+                        <span>3. Selección de Empaque & Presentación</span>
+                    </h2>
+                    <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-4);">
+                        Elige cómo deseas que preparemos tu pedido: bolsas de satén, cajas para determinadas cantidades u opciones especiales.
+                    </p>
+
+                    @if($packagings->isNotEmpty())
+                        <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                            @foreach($packagings as $pIdx => $pack)
+                                @php
+                                    $isSelected = old('packaging_id') 
+                                        ? (old('packaging_id') == $pack->id)
+                                        : ($pack->is_default || $pIdx === 0);
+                                @endphp
+                                <label class="packaging-choice-card {{ $isSelected ? 'selected' : '' }}" style="display: flex; align-items: flex-start; gap: 14px; border: 2px solid {{ $isSelected ? 'var(--color-primary)' : 'var(--color-border)' }}; padding: 14px; border-radius: var(--radius-sm); background-color: {{ $isSelected ? '#FAF5F2' : '#FFFFFF' }}; cursor: pointer; transition: all 0.2s ease;">
+                                    <input type="radio" 
+                                           name="packaging_id" 
+                                           value="{{ $pack->id }}" 
+                                           data-price="{{ (float)$pack->price }}"
+                                           data-name="{{ $pack->name }}"
+                                           {{ $isSelected ? 'checked' : '' }} 
+                                           onchange="updatePackaging(this)"
+                                           style="margin-top: 4px; accent-color: var(--color-primary-dark);">
+                                    
+                                    @if($pack->image_path)
+                                        <img src="{{ asset($pack->image_path) }}" alt="{{ $pack->name }}" style="width: 52px; height: 52px; object-fit: cover; border-radius: var(--radius-xs); border: 1px solid var(--color-border-light); flex-shrink: 0;">
+                                    @else
+                                        <div style="width: 52px; height: 52px; border-radius: var(--radius-xs); background: var(--color-surface-soft); border: 1px solid var(--color-border-light); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                                            🎁
+                                        </div>
+                                    @endif
+
+                                    <div style="flex: 1;">
+                                        <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 6px;">
+                                            <div class="flex items-center gap-2">
+                                                <strong style="color: var(--color-text); font-size: var(--text-sm);">{{ $pack->name }}</strong>
+                                                @if($pack->capacity)
+                                                    <span class="badge badge-subtle" style="font-size: 0.7rem; padding: 2px 6px;">
+                                                        📦 {{ $pack->capacity }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <span style="font-weight: 700; font-size: var(--text-xs); color: {{ (float)$pack->price > 0 ? 'var(--color-primary-dark)' : 'var(--color-success)' }}; background: {{ (float)$pack->price > 0 ? 'var(--color-surface-soft)' : 'var(--color-success-bg)' }}; padding: 2px 8px; border-radius: var(--radius-xs);">
+                                                {{ (float)$pack->price > 0 ? '+$' . number_format($pack->price, 2) . ' US$' : 'Incluido' }}
+                                            </span>
+                                        </div>
+                                        @if($pack->description)
+                                            <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px; line-height: 1.4;">
+                                                {{ $pack->description }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                    @else
+                        <div style="background-color: var(--color-surface-soft); padding: 12px; border-radius: var(--radius-xs); font-size: var(--text-xs); color: var(--color-text-muted);">
+                            ✨ Tu pedido será preparado con el empaque insignia tradicional de Moraia con lazo de satén.
+                        </div>
+                    @endif
+                </div>
+
+                <!-- 4. Gift Options (Personalized Box / Card) -->
+                <div class="checkout-card" style="margin-bottom: var(--space-6);">
+                    <h2 class="checkout-card-title">
+                        <span>4. ¿Este pedido es un Regalo?</span>
                     </h2>
 
                     <div class="form-group">
                         <label class="form-check" style="cursor: pointer;">
                             <input type="checkbox" name="is_gift" id="is_gift_checkbox" value="1" {{ old('is_gift') ? 'checked' : '' }} onchange="toggleGiftFields()">
                             <div>
-                                <strong style="color: var(--color-primary-dark);">🎁 Sí, deseo incluir empaque de regalo y tarjeta personalizada</strong>
+                                <strong style="color: var(--color-primary-dark);">🎁 Sí, deseo incluir dedicatoria y tarjeta personalizada</strong>
                                 <span style="display: block; font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">
-                                    Prepararemos tu pedido con lazo de satén y tarjeta escrita para la destinataria.
+                                    Escribiremos una dedicatoria especial caligrafiada en tarjeta de regalo para la destinataria.
                                 </span>
                             </div>
                         </label>
@@ -147,10 +212,10 @@
                     </div>
                 </div>
 
-                <!-- 4. Notes -->
+                <!-- 5. Notes -->
                 <div class="checkout-card">
                     <h2 class="checkout-card-title">
-                        <span>4. Notas Adicionales</span>
+                        <span>5. Notas Adicionales</span>
                     </h2>
                     <div class="form-group" style="margin-bottom: 0;">
                         <textarea name="customer_notes" class="form-textarea" rows="2" placeholder="Instrucciones especiales para la entrega o detalles de tu pedido...">{{ old('customer_notes') }}</textarea>
@@ -188,14 +253,30 @@
                     </div>
 
                     <div class="summary-row">
+                        <span>Empaque</span>
+                        <span id="summary-packaging">
+                            @php
+                                $selectedPack = $packagings->firstWhere('id', old('packaging_id')) ?? $packagings->firstWhere('is_default', true) ?? $packagings->first();
+                                $initialPackFee = $selectedPack ? (float)$selectedPack->price : 0.00;
+                            @endphp
+                            {{ $initialPackFee > 0 ? '+$' . number_format($initialPackFee, 2) : 'Incluido' }}
+                        </span>
+                    </div>
+
+                    <div class="summary-row">
                         <span>Envío</span>
                         <span id="summary-shipping">${{ number_format(old('delivery_method', 'delivery_caracas') === 'delivery_caracas' ? $shippingCaracas : 0, 2) }}</span>
                     </div>
 
+                    @php
+                        $initialShipping = old('delivery_method', 'delivery_caracas') === 'delivery_caracas' ? $shippingCaracas : 0;
+                        $initialTotal = $subtotal + $initialShipping + $initialPackFee;
+                    @endphp
+
                     <div class="summary-row total">
                         <span>Total Final</span>
                         <span id="summary-total" style="color: var(--color-primary-dark);">
-                            ${{ number_format($subtotal + (old('delivery_method', 'delivery_caracas') === 'delivery_caracas' ? $shippingCaracas : 0), 2) }}
+                            ${{ number_format($initialTotal, 2) }}
                         </span>
                     </div>
 
@@ -217,11 +298,41 @@
 @push('scripts')
 <script>
     const subtotal = {{ $subtotal }};
+    let currentShippingFee = {{ old('delivery_method', 'delivery_caracas') === 'delivery_caracas' ? $shippingCaracas : 0 }};
+    let currentPackagingFee = {{ $initialPackFee }};
+
+    function recalculateTotal() {
+        const total = subtotal + currentShippingFee + currentPackagingFee;
+        document.getElementById('summary-total').textContent = '$' + total.toFixed(2);
+    }
 
     function updateShipping(fee) {
+        currentShippingFee = fee;
         document.getElementById('summary-shipping').textContent = '$' + fee.toFixed(2);
-        const total = subtotal + fee;
-        document.getElementById('summary-total').textContent = '$' + total.toFixed(2);
+        recalculateTotal();
+    }
+
+    function updatePackaging(radioInput) {
+        const fee = parseFloat(radioInput.getAttribute('data-price')) || 0.00;
+        currentPackagingFee = fee;
+        
+        const summaryPack = document.getElementById('summary-packaging');
+        if (summaryPack) {
+            summaryPack.textContent = fee > 0 ? '+$' + fee.toFixed(2) : 'Incluido';
+        }
+
+        // Highlight active card
+        document.querySelectorAll('.packaging-choice-card').forEach(card => {
+            card.style.borderColor = 'var(--color-border)';
+            card.style.backgroundColor = '#FFFFFF';
+        });
+        const parentCard = radioInput.closest('.packaging-choice-card');
+        if (parentCard) {
+            parentCard.style.borderColor = 'var(--color-primary)';
+            parentCard.style.backgroundColor = '#FAF5F2';
+        }
+
+        recalculateTotal();
     }
 
     function toggleGiftFields() {

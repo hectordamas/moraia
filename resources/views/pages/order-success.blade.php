@@ -73,6 +73,12 @@
                     <span style="color: var(--color-text-muted);">Dirección:</span>
                     <span>{{ $order->delivery_address }}</span>
                 </div>
+                @if($order->packaging_name)
+                    <div class="flex justify-between" style="margin-bottom: 4px;">
+                        <span style="color: var(--color-text-muted);">Empaque:</span>
+                        <span>{{ $order->packaging_name }} ({{ (float)$order->packaging_price > 0 ? '+$' . number_format($order->packaging_price, 2) : 'Incluido' }})</span>
+                    </div>
+                @endif
                 @if($order->is_gift)
                     <div class="flex justify-between" style="margin-bottom: 4px; color: var(--color-primary-dark);">
                         <span>🎁 Regalo para:</span>

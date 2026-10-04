@@ -78,6 +78,12 @@
                     <span style="color: var(--color-text-muted);">Subtotal:</span>
                     <span>${{ number_format($order->subtotal, 2) }}</span>
                 </div>
+                @if($order->packaging_name)
+                    <div class="flex justify-between" style="font-size: var(--text-sm); margin-bottom: 6px;">
+                        <span style="color: var(--color-text-muted);">Empaque ({{ $order->packaging_name }}):</span>
+                        <span>{{ (float)$order->packaging_price > 0 ? '$' . number_format($order->packaging_price, 2) : 'Incluido' }}</span>
+                    </div>
+                @endif
                 <div class="flex justify-between" style="font-size: var(--text-sm); margin-bottom: 6px;">
                     <span style="color: var(--color-text-muted);">Envío ({{ $order->delivery_method_label }}):</span>
                     <span>${{ number_format($order->shipping_fee, 2) }}</span>
@@ -88,6 +94,37 @@
                 </div>
             </div>
         </div>
+
+        <!-- Packaging Selection Card -->
+        @if($order->packaging_name)
+            <div class="admin-card" style="border-left: 4px solid var(--color-primary-dark);">
+                <div class="flex items-center justify-between" style="margin-bottom: var(--space-2);">
+                    <h3 style="font-family: var(--font-display); font-size: 1.3rem; color: var(--color-primary-dark); margin: 0;">
+                        📦 Presentación & Empaque Seleccionado
+                    </h3>
+                    @if((float)$order->packaging_price > 0)
+                        <span class="badge" style="background: var(--color-primary-light); color: var(--color-primary-dark);">
+                            +${{ number_format($order->packaging_price, 2) }} US$
+                        </span>
+                    @else
+                        <span class="badge badge-confirmed">Incluido</span>
+                    @endif
+                </div>
+                <div style="font-size: var(--text-sm); color: var(--color-text);">
+                    <strong>Tipo de Empaque:</strong> {{ $order->packaging_name }}
+                    @if($order->packaging && $order->packaging->capacity)
+                        <span style="color: var(--color-text-muted); font-size: var(--text-xs); margin-left: 6px;">
+                            (Capacidad: {{ $order->packaging->capacity }})
+                        </span>
+                    @endif
+                    @if($order->packaging && $order->packaging->description)
+                        <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px; font-style: italic;">
+                            {{ $order->packaging->description }}
+                        </p>
+                    @endif
+                </div>
+            </div>
+        @endif
 
         <!-- Gift Information Card (if applicable) -->
         @if($order->is_gift)

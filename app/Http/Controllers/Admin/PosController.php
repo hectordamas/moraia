@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Packaging;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Setting;
@@ -27,9 +28,11 @@ class PosController extends Controller
             ->orderBy('sort_order', 'asc')
             ->get();
 
+        $packagings = Packaging::active()->get();
+
         $caracasShippingFee = (float) Setting::get('shipping_caracas_price', '3.00');
 
-        return view('admin.pos.index', compact('products', 'categories', 'caracasShippingFee'));
+        return view('admin.pos.index', compact('products', 'categories', 'packagings', 'caracasShippingFee'));
     }
 
     public function store(Request $request): JsonResponse
@@ -44,6 +47,7 @@ class PosController extends Controller
             'delivery_city' => 'required|string|max:100',
             'delivery_address' => 'required|string|max:500',
             'customer_notes' => 'nullable|string|max:1000',
+            'packaging_id' => 'nullable|exists:packagings,id',
             'is_gift' => 'nullable|boolean',
             'gift_recipient_name' => 'nullable|string|max:120',
             'gift_card_message' => 'nullable|string|max:500',
@@ -91,7 +95,18 @@ class PosController extends Controller
 
         $discount = (float) ($validated['discount_amount'] ?? 0);
         $shippingFee = (float) $validated['shipping_fee'];
-        $total = max(0, ($subtotal - $discount) + $shippingFee);
+
+        $packaging = null;
+        if (! empty($validated['packaging_id'])) {
+            $packaging = Packaging::find($validated['packaging_id']);
+        } else {
+            $packaging = Packaging::where('is_default', true)->where('is_active', true)->first();
+        }
+
+        $packagingPrice = $packaging ? (float) $packaging->price : 0.00;
+        $packagingName = $packaging ? $packaging->name : null;
+
+        $total = max(0, ($subtotal - $discount) + $shippingFee + $packagingPrice);
 
         // Generate unique Order Code: MOR-YYYY-RANDOM
         $orderCode = 'MOR-'.date('Y').'-'.strtoupper(Str::random(5));
@@ -112,6 +127,9 @@ class PosController extends Controller
             'delivery_city' => $validated['delivery_city'],
             'delivery_address' => $validated['delivery_address'],
             'customer_notes' => $notes ?: null,
+            'packaging_id' => $packaging?->id,
+            'packaging_name' => $packagingName,
+            'packaging_price' => $packagingPrice,
             'is_gift' => ! empty($validated['is_gift']),
             'gift_recipient_name' => $validated['gift_recipient_name'] ?? null,
             'gift_card_message' => $validated['gift_card_message'] ?? null,
