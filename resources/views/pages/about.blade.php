@@ -65,7 +65,7 @@
         </div>
 
         <div>
-            <img src="{{ asset('images/branding/logo con estilos.jpeg') }}" alt="Moraia Brand Concept" style="width: 100%; border-radius: var(--radius-md); box-shadow: var(--shadow-md);">
+            <img src="{{ asset('images/branding/moraia_brand_concept.jpg') }}" alt="Moraia Experiencia de Regalo y Lujo" style="width: 100%; border-radius: var(--radius-md); box-shadow: 0 12px 36px rgba(169, 80, 88, 0.12); object-fit: cover; aspect-ratio: 4/3;">
         </div>
     </div>
 
