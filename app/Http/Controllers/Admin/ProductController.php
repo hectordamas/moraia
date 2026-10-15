@@ -7,7 +7,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
-use App\Rules\SquareImageRule;
+use App\Services\ProductImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -15,6 +15,10 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        protected ProductImageService $imageService
+    ) {}
+
     public function index(Request $request): View
     {
         $query = Product::with(['category', 'images', 'variants'])->orderBy('id', 'desc');
@@ -60,7 +64,10 @@ class ProductController extends Controller
             'target_audience' => 'required|string|in:all,moraia,moraia_intimo',
             'seo_title' => 'nullable|string|max:150',
             'seo_description' => 'nullable|string|max:300',
-            'images.*' => ['nullable', 'image', 'max:4096', new SquareImageRule],
+            'images.*' => ['nullable', 'image', 'max:12288'],
+            'image_crops' => 'nullable',
+            'image_file_keys' => 'nullable',
+            'image_order' => 'nullable',
             'variants' => 'nullable|array',
             'variants.*.name' => 'nullable|string|max:150',
             'variants.*.variant_type' => 'nullable|string|max:50',
@@ -100,7 +107,7 @@ class ProductController extends Controller
             'category_id' => $validated['category_id'],
             'name' => $validated['name'],
             'slug' => $slug,
-            'sku' => $validated['sku'] ?? 'MOR-'.strtoupper(Str::random(6)),
+            'sku' => $validated['sku'] ?? 'MOR-'.Str::upper(Str::random(6)),
             'price' => $validated['price'],
             'compare_at_price' => $validated['compare_at_price'] ?? null,
             'stock_quantity' => $totalStock,
@@ -116,46 +123,60 @@ class ProductController extends Controller
             'seo_description' => $validated['seo_description'] ?? ($validated['short_description'] ?? null),
         ]);
 
-        // Handle Image Uploads to public/uploads/products
-        $uploadDir = public_path('uploads/products');
-        if (! file_exists($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
         if ($request->hasFile('images')) {
             $uploadedFiles = $request->file('images');
+            $newFileKeys = $request->filled('image_file_keys')
+                ? (is_string($request->input('image_file_keys')) ? json_decode($request->input('image_file_keys'), true) : $request->input('image_file_keys'))
+                : [];
+            $cropsRegistry = $request->filled('image_crops')
+                ? (is_string($request->input('image_crops')) ? json_decode($request->input('image_crops'), true) : $request->input('image_crops'))
+                : [];
 
-            // Check if client provided custom order indexes
+            // Sort files according to image_order if provided
             $orderData = $request->input('image_order');
             if ($orderData) {
                 $orderIndexes = is_string($orderData) ? json_decode($orderData, true) : $orderData;
                 if (is_array($orderIndexes) && ! empty($orderIndexes)) {
                     $sortedFiles = [];
+                    $sortedKeys = [];
                     foreach ($orderIndexes as $idxKey) {
-                        $cleanIdx = is_numeric($idxKey) ? (int) $idxKey : (int) str_replace('new_', '', $idxKey);
-                        if (isset($uploadedFiles[$cleanIdx])) {
-                            $sortedFiles[] = $uploadedFiles[$cleanIdx];
-                            unset($uploadedFiles[$cleanIdx]);
+                        $foundIdx = null;
+                        if (! empty($newFileKeys)) {
+                            $foundIdx = array_search($idxKey, $newFileKeys, true);
+                        }
+                        if ($foundIdx === false || $foundIdx === null) {
+                            $numericIdx = is_numeric($idxKey) ? (int) $idxKey : (int) str_replace('new_', '', $idxKey);
+                            if (isset($uploadedFiles[$numericIdx])) {
+                                $foundIdx = $numericIdx;
+                            }
+                        }
+
+                        if ($foundIdx !== false && $foundIdx !== null && isset($uploadedFiles[$foundIdx])) {
+                            $sortedFiles[] = $uploadedFiles[$foundIdx];
+                            $sortedKeys[] = $idxKey;
+                            unset($uploadedFiles[$foundIdx]);
                         }
                     }
-                    foreach ($uploadedFiles as $remaining) {
+                    foreach ($uploadedFiles as $remIdx => $remaining) {
                         $sortedFiles[] = $remaining;
+                        $sortedKeys[] = $newFileKeys[$remIdx] ?? ('new_'.$remIdx);
                     }
                     $uploadedFiles = $sortedFiles;
+                    $newFileKeys = $sortedKeys;
                 }
             }
 
             foreach ($uploadedFiles as $idx => $file) {
-                $filename = 'prod_'.$product->id.'_'.uniqid().'.'.$file->getClientOriginalExtension();
-                $file->move($uploadDir, $filename);
+                $cardId = $newFileKeys[$idx] ?? ('new_'.$idx);
+                $cropData = $cropsRegistry[$cardId] ?? null;
 
-                ProductImage::create([
-                    'product_id' => $product->id,
-                    'image_path' => 'uploads/products/'.$filename,
-                    'alt_text' => $product->name,
-                    'sort_order' => $idx,
-                    'is_cover' => $idx === 0,
-                ]);
+                $this->imageService->storeImage(
+                    product: $product,
+                    file: $file,
+                    cropData: $cropData,
+                    sortOrder: $idx,
+                    isCover: $idx === 0
+                );
             }
         } else {
             // Default placeholder image
@@ -226,7 +247,11 @@ class ProductController extends Controller
             'target_audience' => 'required|string|in:all,moraia,moraia_intimo',
             'seo_title' => 'nullable|string|max:150',
             'seo_description' => 'nullable|string|max:300',
-            'images.*' => ['nullable', 'image', 'max:4096', new SquareImageRule],
+            'images.*' => ['nullable', 'image', 'max:12288'],
+            'image_crops' => 'nullable',
+            'image_file_keys' => 'nullable',
+            'image_order' => 'nullable',
+            'deleted_image_ids' => 'nullable',
             'variants' => 'nullable|array',
             'variants.*.id' => 'nullable|integer',
             'variants.*.name' => 'nullable|string|max:150',
@@ -276,11 +301,6 @@ class ProductController extends Controller
             'seo_description' => $validated['seo_description'] ?? ($validated['short_description'] ?? null),
         ]);
 
-        $uploadDir = public_path('uploads/products');
-        if (! file_exists($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
         // 1. Delete marked images
         if ($request->filled('deleted_image_ids')) {
             $deletedIds = $request->input('deleted_image_ids');
@@ -293,12 +313,7 @@ class ProductController extends Controller
                     ->get();
 
                 foreach ($imagesToDelete as $imgToDelete) {
-                    if (str_starts_with($imgToDelete->image_path, 'uploads/')) {
-                        $filePath = public_path($imgToDelete->image_path);
-                        if (file_exists($filePath)) {
-                            @unlink($filePath);
-                        }
-                    }
+                    $this->imageService->deleteImageFiles($imgToDelete);
                     $imgToDelete->delete();
                 }
             }
@@ -306,25 +321,49 @@ class ProductController extends Controller
 
         // 2. Upload newly added files
         $uploadedFiles = $request->file('images') ?? [];
+        $newFileKeys = $request->filled('image_file_keys')
+            ? (is_string($request->input('image_file_keys')) ? json_decode($request->input('image_file_keys'), true) : $request->input('image_file_keys'))
+            : [];
+        $cropsRegistry = $request->filled('image_crops')
+            ? (is_string($request->input('image_crops')) ? json_decode($request->input('image_crops'), true) : $request->input('image_crops'))
+            : [];
+
         $newImageModels = [];
 
         foreach ($uploadedFiles as $idx => $file) {
-            $filename = 'prod_'.$product->id.'_'.uniqid().'.'.$file->getClientOriginalExtension();
-            $file->move($uploadDir, $filename);
+            $cardId = $newFileKeys[$idx] ?? ('new_'.$idx);
+            $cropData = $cropsRegistry[$cardId] ?? null;
 
-            $newImg = ProductImage::create([
-                'product_id' => $product->id,
-                'image_path' => 'uploads/products/'.$filename,
-                'alt_text' => $product->name,
-                'sort_order' => 999 + $idx,
-                'is_cover' => false,
-            ]);
+            $newImg = $this->imageService->storeImage(
+                product: $product,
+                file: $file,
+                cropData: $cropData,
+                sortOrder: 999 + $idx,
+                isCover: false
+            );
 
-            $newImageModels[$idx] = $newImg;
+            $newImageModels[$cardId] = $newImg;
             $newImageModels['new_'.$idx] = $newImg;
+            $newImageModels[$idx] = $newImg;
         }
 
-        // 3. Reorder both existing and newly uploaded images
+        // 3. Handle re-cropping of existing images
+        if (! empty($cropsRegistry)) {
+            foreach ($cropsRegistry as $key => $crop) {
+                if (str_starts_with((string) $key, 'existing_')) {
+                    $existingId = (int) str_replace('existing_', '', (string) $key);
+                    $existingImg = ProductImage::where('id', $existingId)
+                        ->where('product_id', $product->id)
+                        ->first();
+
+                    if ($existingImg && is_array($crop)) {
+                        $this->imageService->updateCrop($existingImg, $crop);
+                    }
+                }
+            }
+        }
+
+        // 4. Reorder both existing and newly uploaded images
         $orderData = $request->input('image_order');
         if ($orderData) {
             $orderedItems = is_string($orderData) ? json_decode($orderData, true) : $orderData;
@@ -341,14 +380,12 @@ class ProductController extends Controller
                                 'is_cover' => $currentPosition === 0,
                             ]);
                         $currentPosition++;
-                    } elseif (str_starts_with($itemRef, 'new_') || isset($newImageModels[$itemRef])) {
-                        if (isset($newImageModels[$itemRef])) {
-                            $newImageModels[$itemRef]->update([
-                                'sort_order' => $currentPosition,
-                                'is_cover' => $currentPosition === 0,
-                            ]);
-                            $currentPosition++;
-                        }
+                    } elseif (isset($newImageModels[$itemRef])) {
+                        $newImageModels[$itemRef]->update([
+                            'sort_order' => $currentPosition,
+                            'is_cover' => $currentPosition === 0,
+                        ]);
+                        $currentPosition++;
                     }
                 }
             }

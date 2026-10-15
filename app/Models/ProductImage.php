@@ -13,6 +13,8 @@ class ProductImage extends Model
     protected $fillable = [
         'product_id',
         'image_path',
+        'original_path',
+        'crop_data',
         'alt_text',
         'sort_order',
         'is_cover',
@@ -23,6 +25,7 @@ class ProductImage extends Model
         return [
             'is_cover' => 'boolean',
             'sort_order' => 'integer',
+            'crop_data' => 'array',
         ];
     }
 
@@ -34,5 +37,10 @@ class ProductImage extends Model
     public function getUrlAttribute(): string
     {
         return asset($this->image_path);
+    }
+
+    public function getOriginalUrlAttribute(): string
+    {
+        return $this->original_path ? asset($this->original_path) : asset($this->image_path);
     }
 }

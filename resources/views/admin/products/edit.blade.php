@@ -279,6 +279,8 @@
                     <!-- Hidden file inputs & tracking containers -->
                     <input type="file" id="images_input" name="images[]" multiple accept="image/*" style="display: none;">
                     <input type="hidden" id="image_order" name="image_order" value="">
+                    <input type="hidden" id="image_crops" name="image_crops" value="">
+                    <input type="hidden" id="image_file_keys" name="image_file_keys" value="">
                     <div id="deletedImagesContainer"></div>
 
                     <!-- Drag and drop zone box -->
@@ -290,7 +292,7 @@
                         </div>
                         <div class="dropzone-title">Arrastra y suelta más fotos aquí</div>
                         <div class="dropzone-subtitle">o haz clic para explorar tus archivos</div>
-                        <div class="dropzone-specs">📐 Formato 1:1 Cuadrado (500x500 px recomendado)</div>
+                        <div class="dropzone-specs">✨ Sube imágenes de cualquier tamaño. Puedes recortarlas en 1:1 o se centrarán automáticamente.</div>
                     </div>
 
                     <!-- Sortable Gallery Grid -->
@@ -307,10 +309,20 @@
 
                         <div id="sortableGrid" class="sortable-gallery-grid">
                             @foreach($product->images as $index => $img)
-                                <div class="sortable-image-card" data-id="existing_{{ $img->id }}" data-existing-id="{{ $img->id }}">
+                                <div class="sortable-image-card" 
+                                     data-id="existing_{{ $img->id }}" 
+                                     data-existing-id="{{ $img->id }}" 
+                                     data-image-url="{{ asset($img->original_path ?: $img->image_path) }}">
                                     <img src="{{ asset($img->image_path) }}" alt="{{ $product->name }}">
                                     <span class="card-badge-cover" style="{{ $img->is_cover || $index === 0 ? 'display: inline-block;' : '' }}">★ Portada</span>
                                     <span class="card-badge-order">#{{ $index + 1 }}</span>
+                                    <span class="card-badge-cropped" style="{{ !empty($img->crop_data) ? 'display: inline-flex;' : 'display: none;' }}">✓ 1:1</span>
+                                    <button type="button" class="card-btn-crop" title="Ajustar encuadre 1:1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5" />
+                                        </svg>
+                                        <span>1:1</span>
+                                    </button>
                                     <button type="button" class="card-btn-delete" title="Eliminar Fotografía">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -381,11 +393,15 @@
         <div style="height: 65px;"></div>
     </form>
 </div>
+
+@include('admin.products._cropper_modal')
 @endsection
 
 @push('scripts')
-<!-- SortableJS CDN -->
+<!-- SortableJS & CropperJS CDNs -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ------------------------------------------------------------------------
@@ -940,17 +956,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ------------------------------------------------------------------------
-    // 6. GALLERY & DROPZONE SCRIPT
+    // 6. GALLERY, DROPZONE & 1:1 CROPPER SCRIPT
     // ------------------------------------------------------------------------
     const dropzoneBox = document.getElementById('dropzoneBox');
     const imagesInput = document.getElementById('images_input');
     const sortableGrid = document.getElementById('sortableGrid');
     const imageOrderInput = document.getElementById('image_order');
+    const imageCropsInput = document.getElementById('image_crops');
+    const imageFileKeysInput = document.getElementById('image_file_keys');
     const deletedImagesContainer = document.getElementById('deletedImagesContainer');
     const productEditForm = document.getElementById('productEditForm');
 
+    // Cropper Modal Elements
+    const cropperModal = document.getElementById('moraiaCropperModal');
+    const cropperTargetImage = document.getElementById('cropperTargetImage');
+    const cropperBtnClose = document.getElementById('cropperBtnClose');
+    const cropperBtnCancel = document.getElementById('cropperBtnCancel');
+    const cropperBtnApply = document.getElementById('cropperBtnApply');
+
     let newFilesRegistry = [];
     let newFileCounter = 0;
+    let cropsRegistry = {};
+    let currentCropper = null;
+    let activeCardForCrop = null;
 
     dropzoneBox.addEventListener('click', () => imagesInput.click());
 
@@ -983,7 +1011,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Bind existing cards in the grid
     sortableGrid.querySelectorAll('.sortable-image-card').forEach(card => {
+        bindCardActions(card);
+    });
+
+    function bindCardActions(card) {
+        const cropBtn = card.querySelector('.card-btn-crop');
+        if (cropBtn) {
+            cropBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openCropper(card);
+            });
+        }
+
         const delBtn = card.querySelector('.card-btn-delete');
         if (delBtn) {
             delBtn.addEventListener('click', (e) => {
@@ -991,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 handleCardDeletion(card);
             });
         }
-    });
+    }
 
     function handleIncomingFiles(files) {
         Array.from(files).forEach(file => {
@@ -1014,11 +1055,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const card = document.createElement('div');
         card.className = 'sortable-image-card';
         card.setAttribute('data-id', id);
+        card.setAttribute('data-image-url', url);
         card.innerHTML = `
-            <img src="${url}" alt="${title}">
+            <img src="${url}" alt="${escapeHtml(title)}">
             <span class="card-badge-cover">★ Portada</span>
             <span class="card-badge-order">#</span>
             <span class="card-tag-new">Nueva</span>
+            <span class="card-badge-cropped">✓ 1:1</span>
+            <button type="button" class="card-btn-crop" title="Ajustar encuadre 1:1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5" />
+                </svg>
+                <span>1:1</span>
+            </button>
             <button type="button" class="card-btn-delete" title="Eliminar Fotografía">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1026,11 +1075,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </button>
         `;
 
-        card.querySelector('.card-btn-delete').addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleCardDeletion(card);
-        });
-
+        bindCardActions(card);
         sortableGrid.appendChild(card);
     }
 
@@ -1046,6 +1091,11 @@ document.addEventListener('DOMContentLoaded', function() {
             deletedImagesContainer.appendChild(hiddenInput);
         } else {
             newFilesRegistry = newFilesRegistry.filter(item => item.id !== id);
+        }
+
+        delete cropsRegistry[id];
+        if (imageCropsInput) {
+            imageCropsInput.value = JSON.stringify(cropsRegistry);
         }
 
         card.remove();
@@ -1076,18 +1126,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function syncDataTransfer() {
         const dt = new DataTransfer();
         const cards = Array.from(sortableGrid.children);
+        const newKeys = [];
 
         cards.forEach(card => {
             const id = card.getAttribute('data-id');
             const found = newFilesRegistry.find(item => item.id === id);
             if (found && found.file) {
                 dt.items.add(found.file);
+                newKeys.push(id);
             }
         });
 
         imagesInput.files = dt.files;
+        if (imageFileKeysInput) {
+            imageFileKeysInput.value = JSON.stringify(newKeys);
+        }
+        if (imageCropsInput) {
+            imageCropsInput.value = JSON.stringify(cropsRegistry);
+        }
     }
 
+    // Sortable Drag and Drop
     new Sortable(sortableGrid, {
         animation: 180,
         ghostClass: 'sortable-ghost',
@@ -1099,6 +1158,162 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     updateOrderBadges();
+
+    // ------------------------------------------------------------------------
+    // CROPPER MODAL CONTROLLER
+    // ------------------------------------------------------------------------
+    function openCropper(card) {
+        activeCardForCrop = card;
+        const imageUrl = card.getAttribute('data-image-url') || card.querySelector('img').src;
+
+        if (currentCropper) {
+            currentCropper.destroy();
+            currentCropper = null;
+        }
+
+        const wrap = document.querySelector('.cropper-viewport-wrap');
+        if (wrap) {
+            wrap.innerHTML = '';
+            const img = document.createElement('img');
+            img.id = 'cropperTargetImage';
+            img.alt = 'Imagen a recortar';
+            img.src = imageUrl;
+            wrap.appendChild(img);
+
+            // Open modal first so container has real non-zero dimensions
+            cropperModal.style.display = 'flex';
+            cropperModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+
+            currentCropper = new Cropper(img, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 0.95,
+                responsive: true,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+                checkCrossOrigin: false,
+                ready: function() {
+                    const cardId = activeCardForCrop ? activeCardForCrop.getAttribute('data-id') : null;
+                    if (cardId && cropsRegistry[cardId] && currentCropper) {
+                        try {
+                            currentCropper.setData(cropsRegistry[cardId]);
+                        } catch (e) {
+                            console.warn('Could not set previous crop data', e);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function closeCropper() {
+        if (currentCropper) {
+            currentCropper.destroy();
+            currentCropper = null;
+        }
+        const wrap = document.querySelector('.cropper-viewport-wrap');
+        if (wrap) {
+            wrap.innerHTML = '';
+        }
+        cropperModal.style.display = 'none';
+        cropperModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        activeCardForCrop = null;
+    }
+
+    cropperBtnClose?.addEventListener('click', closeCropper);
+    cropperBtnCancel?.addEventListener('click', closeCropper);
+
+    document.getElementById('cropZoomIn')?.addEventListener('click', () => {
+        if (currentCropper && currentCropper.ready) currentCropper.zoom(0.1);
+    });
+    document.getElementById('cropZoomOut')?.addEventListener('click', () => {
+        if (currentCropper && currentCropper.ready) currentCropper.zoom(-0.1);
+    });
+    document.getElementById('cropRotateLeft')?.addEventListener('click', () => {
+        if (currentCropper && currentCropper.ready) currentCropper.rotate(-90);
+    });
+    document.getElementById('cropRotateRight')?.addEventListener('click', () => {
+        if (currentCropper && currentCropper.ready) currentCropper.rotate(90);
+    });
+    document.getElementById('cropReset')?.addEventListener('click', () => {
+        if (currentCropper && currentCropper.ready) currentCropper.reset();
+    });
+
+    cropperBtnApply?.addEventListener('click', function() {
+        if (!currentCropper || !activeCardForCrop) return;
+
+        let cropData = null;
+        try {
+            cropData = currentCropper.getData(true);
+        } catch (err) {
+            console.error('Error getting crop data:', err);
+        }
+
+        const cardId = activeCardForCrop.getAttribute('data-id');
+
+        if (cropData && cropData.width > 0 && cropData.height > 0) {
+            cropsRegistry[cardId] = {
+                x: Math.round(cropData.x),
+                y: Math.round(cropData.y),
+                width: Math.round(cropData.width),
+                height: Math.round(cropData.height)
+            };
+
+            if (imageCropsInput) {
+                imageCropsInput.value = JSON.stringify(cropsRegistry);
+            }
+        }
+
+        // Generate client-side 1:1 preview thumbnail
+        try {
+            const croppedCanvas = currentCropper.getCroppedCanvas({
+                width: 320,
+                height: 320,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+
+            if (croppedCanvas) {
+                const previewDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.92);
+                const cardImg = activeCardForCrop.querySelector('img');
+                if (cardImg) {
+                    cardImg.src = previewDataUrl;
+                }
+
+                const cropBadge = activeCardForCrop.querySelector('.card-badge-cropped');
+                if (cropBadge) {
+                    cropBadge.style.display = 'inline-flex';
+                }
+            }
+        } catch (canvasErr) {
+            console.warn('Canvas preview generation error:', canvasErr);
+            const cropBadge = activeCardForCrop.querySelector('.card-badge-cropped');
+            if (cropBadge) {
+                cropBadge.style.display = 'inline-flex';
+            }
+        }
+
+        closeCropper();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (cropperModal.style.display === 'flex') {
+            if (e.key === 'Escape') {
+                closeCropper();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                cropperBtnApply?.click();
+            }
+        }
+    });
 
     productEditForm.addEventListener('submit', function() {
         updateOrderBadges();
